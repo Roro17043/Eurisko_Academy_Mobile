@@ -1,3 +1,7 @@
+// This is a React Native component that wraps the TextInput component
+// and applies a custom font style. It allows you to pass additional styles and props.
+
+
 import React from 'react';
 import { TextInput, TextInputProps, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';

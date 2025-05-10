@@ -1,3 +1,7 @@
+//Custom Floating Action Button (FAB) for settings
+// This component provides a floating action button that toggles between settings options.
+// It includes options for changing the theme and logging out.
+
 import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

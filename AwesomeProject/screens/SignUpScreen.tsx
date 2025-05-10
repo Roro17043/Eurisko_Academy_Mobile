@@ -1,5 +1,12 @@
 import React, {useState} from 'react';
-import { StyleSheet, ScrollView} from 'react-native';
+import {
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
 import {z} from 'zod';
 import ScreenWrapper from '../components/ScreenWrapper';
 import {useTheme} from '../context/ThemeContext';
@@ -53,57 +60,73 @@ export default function SignUpScreen() {
 
   return (
     <ScreenWrapper>
-      <ScrollView contentContainerStyle={styles.container}>
-  <AppText style={styles.title}>Sign Up</AppText>
+      <KeyboardAvoidingView
+        style={styles.wrapper}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled">
+            <AppText style={styles.title}>Sign Up</AppText>
 
-  {errors.name && <AppText style={styles.error}>{errors.name}</AppText>}
-  <AppTextInput
-    placeholder="Name"
-    placeholderTextColor={isDarkMode ? '#999' : '#666'}
-    style={styles.input}
-    value={form.name}
-    onChangeText={value => handleChange('name', value)}
-  />
+            {errors.name && (
+              <AppText style={styles.error}>{errors.name}</AppText>
+            )}
+            <AppTextInput
+              placeholder="Name"
+              placeholderTextColor={isDarkMode ? '#999' : '#666'}
+              style={styles.input}
+              value={form.name}
+              onChangeText={value => handleChange('name', value)}
+            />
 
-  {errors.email && <AppText style={styles.error}>{errors.email}</AppText>}
-  <AppTextInput
-    placeholder="Email"
-    placeholderTextColor={isDarkMode ? '#999' : '#666'}
-    style={styles.input}
-    value={form.email}
-    onChangeText={value => handleChange('email', value)}
-    autoCapitalize="none"
-  />
+            {errors.email && (
+              <AppText style={styles.error}>{errors.email}</AppText>
+            )}
+            <AppTextInput
+              placeholder="Email"
+              placeholderTextColor={isDarkMode ? '#999' : '#666'}
+              style={styles.input}
+              value={form.email}
+              onChangeText={value => handleChange('email', value)}
+              autoCapitalize="none"
+            />
 
-  {errors.password && <AppText style={styles.error}>{errors.password}</AppText>}
-  <AppTextInput
-    placeholder="Password"
-    placeholderTextColor={isDarkMode ? '#999' : '#666'}
-    style={styles.input}
-    value={form.password}
-    onChangeText={value => handleChange('password', value)}
-    secureTextEntry
-  />
+            {errors.password && (
+              <AppText style={styles.error}>{errors.password}</AppText>
+            )}
+            <AppTextInput
+              placeholder="Password"
+              placeholderTextColor={isDarkMode ? '#999' : '#666'}
+              style={styles.input}
+              value={form.password}
+              onChangeText={value => handleChange('password', value)}
+              secureTextEntry
+            />
 
-  {errors.phone && <AppText style={styles.error}>{errors.phone}</AppText>}
-  <AppTextInput
-    placeholder="Phone Number"
-    placeholderTextColor={isDarkMode ? '#999' : '#666'}
-    style={styles.input}
-    value={form.phone}
-    onChangeText={value => handleChange('phone', value)}
-    keyboardType="phone-pad"
-  />
+            {errors.phone && (
+              <AppText style={styles.error}>{errors.phone}</AppText>
+            )}
+            <AppTextInput
+              placeholder="Phone Number"
+              placeholderTextColor={isDarkMode ? '#999' : '#666'}
+              style={styles.input}
+              value={form.phone}
+              onChangeText={value => handleChange('phone', value)}
+              keyboardType="phone-pad"
+            />
 
-  <AppButton title="Register" onPress={handleSubmit} />
+            <AppButton title="Register" onPress={handleSubmit} />
 
-  <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-    <AppText style={styles.loginText}>
-      Already have an account? <AppText style={styles.loginLink}>Login</AppText>
-    </AppText>
-  </TouchableOpacity>
-</ScrollView>
-
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <AppText style={styles.loginText}>
+                Already have an account?{' '}
+                <AppText style={styles.loginLink}>Login</AppText>
+              </AppText>
+            </TouchableOpacity>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }
@@ -143,5 +166,8 @@ const getStyles = (isDarkMode: boolean) =>
     loginLink: {
       fontWeight: 'bold',
       color: isDarkMode ? '#fff' : '#000',
+    },
+    wrapper: {
+      flex: 1,
     },
   });

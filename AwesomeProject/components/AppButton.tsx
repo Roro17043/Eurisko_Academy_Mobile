@@ -1,5 +1,5 @@
 // components/AppButton.tsx
-
+// Similar to the original code, but with a custom button component and custom font
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 

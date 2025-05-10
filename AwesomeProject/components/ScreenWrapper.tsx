@@ -1,4 +1,6 @@
 // components/ScreenWrapper.tsx
+// Used to wrap screens with a consistent layout and styling
+// Used for the status bar and safe area view
 import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar, StyleSheet } from 'react-native';
