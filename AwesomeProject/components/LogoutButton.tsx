@@ -1,7 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
+import AppText from '../components/AppText';
 
 
 export default function LogoutButton({ isDarkMode }: { isDarkMode: boolean }) {
@@ -13,7 +14,7 @@ export default function LogoutButton({ isDarkMode }: { isDarkMode: boolean }) {
       <TouchableOpacity style={styles.button} onPress={logout}>
         <Ionicons name="exit-outline" size={22} style={styles.icon} />
       </TouchableOpacity>
-      <Text style={styles.label}>Logout</Text>
+      <AppText style={styles.label}>Logout</AppText>
     </>
   );
 }

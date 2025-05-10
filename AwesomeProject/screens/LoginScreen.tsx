@@ -1,9 +1,6 @@
 import React from 'react';
 import {
   View,
-  Text,
-  TextInput,
-  Button,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
@@ -13,6 +10,9 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import ScreenWrapper from '../components/ScreenWrapper';
 import {useNavigation} from '@react-navigation/native';
 import {useTheme} from '../context/ThemeContext';
+import AppButton from '../components/AppButton';
+import AppText from '../components/AppText';
+import AppTextInput from '../components/AppTextInput';
 
 const loginSchema = z.object({
   email: z.union([
@@ -62,16 +62,16 @@ export default function LoginScreen() {
   return (
     <ScreenWrapper>
       <View style={styles.container}>
-        <Text style={styles.title}>Login</Text>
+        <AppText style={styles.title}>Login</AppText>
 
         {errors.email && (
-          <Text style={styles.error}>{errors.email.message}</Text>
+          <AppText style={styles.error}>{errors.email.message}</AppText>
         )}
         <Controller
           control={control}
           name="email"
           render={({field: {onChange, onBlur, value}}) => (
-            <TextInput
+            <AppTextInput
               placeholder="Email or Username"
               placeholderTextColor={isDarkMode ? '#999' : '#666'}
               style={styles.input}
@@ -84,13 +84,13 @@ export default function LoginScreen() {
         />
 
         {errors.password && (
-          <Text style={styles.error}>{errors.password.message}</Text>
+          <AppText style={styles.error}>{errors.password.message}</AppText>
         )}
         <Controller
           control={control}
           name="password"
           render={({field: {onChange, onBlur, value}}) => (
-            <TextInput
+            <AppTextInput
               placeholder="Password"
               placeholderTextColor={isDarkMode ? '#999' : '#666'}
               style={styles.input}
@@ -102,12 +102,12 @@ export default function LoginScreen() {
           )}
         />
 
-        <Button title="Login" onPress={handleSubmit(onSubmit)} />
+        <AppButton title="Login" onPress={handleSubmit(onSubmit)} />
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-          <Text style={styles.signupText}>
+          <AppText style={styles.signupText}>
             Don’t have an account?{' '}
-            <Text style={styles.signupLink}>Sign up</Text>
-          </Text>
+            <AppText style={styles.signupLink}>Sign up</AppText>
+          </AppText>
         </TouchableOpacity>
       </View>
     </ScreenWrapper>

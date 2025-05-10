@@ -1,10 +1,13 @@
 import React, {useState} from 'react';
-import {Text, TextInput, Button, StyleSheet, ScrollView} from 'react-native';
+import { StyleSheet, ScrollView} from 'react-native';
 import {z} from 'zod';
 import ScreenWrapper from '../components/ScreenWrapper';
 import {useTheme} from '../context/ThemeContext';
 import {TouchableOpacity} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import AppButton from '../components/AppButton';
+import AppText from '../components/AppText';
+import AppTextInput from '../components/AppTextInput';
 
 // Zod schema
 const signUpSchema = z.object({
@@ -51,10 +54,10 @@ export default function SignUpScreen() {
   return (
     <ScreenWrapper>
       <ScrollView contentContainerStyle={styles.container}>
-  <Text style={styles.title}>Sign Up</Text>
+  <AppText style={styles.title}>Sign Up</AppText>
 
-  {errors.name && <Text style={styles.error}>{errors.name}</Text>}
-  <TextInput
+  {errors.name && <AppText style={styles.error}>{errors.name}</AppText>}
+  <AppTextInput
     placeholder="Name"
     placeholderTextColor={isDarkMode ? '#999' : '#666'}
     style={styles.input}
@@ -62,8 +65,8 @@ export default function SignUpScreen() {
     onChangeText={value => handleChange('name', value)}
   />
 
-  {errors.email && <Text style={styles.error}>{errors.email}</Text>}
-  <TextInput
+  {errors.email && <AppText style={styles.error}>{errors.email}</AppText>}
+  <AppTextInput
     placeholder="Email"
     placeholderTextColor={isDarkMode ? '#999' : '#666'}
     style={styles.input}
@@ -72,8 +75,8 @@ export default function SignUpScreen() {
     autoCapitalize="none"
   />
 
-  {errors.password && <Text style={styles.error}>{errors.password}</Text>}
-  <TextInput
+  {errors.password && <AppText style={styles.error}>{errors.password}</AppText>}
+  <AppTextInput
     placeholder="Password"
     placeholderTextColor={isDarkMode ? '#999' : '#666'}
     style={styles.input}
@@ -82,8 +85,8 @@ export default function SignUpScreen() {
     secureTextEntry
   />
 
-  {errors.phone && <Text style={styles.error}>{errors.phone}</Text>}
-  <TextInput
+  {errors.phone && <AppText style={styles.error}>{errors.phone}</AppText>}
+  <AppTextInput
     placeholder="Phone Number"
     placeholderTextColor={isDarkMode ? '#999' : '#666'}
     style={styles.input}
@@ -92,12 +95,12 @@ export default function SignUpScreen() {
     keyboardType="phone-pad"
   />
 
-  <Button title="Register" onPress={handleSubmit} />
+  <AppButton title="Register" onPress={handleSubmit} />
 
   <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-    <Text style={styles.loginText}>
-      Already have an account? <Text style={styles.loginLink}>Login</Text>
-    </Text>
+    <AppText style={styles.loginText}>
+      Already have an account? <AppText style={styles.loginLink}>Login</AppText>
+    </AppText>
   </TouchableOpacity>
 </ScrollView>
 

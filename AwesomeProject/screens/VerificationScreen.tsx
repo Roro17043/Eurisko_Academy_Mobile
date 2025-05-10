@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,6 +7,9 @@ import { useAuth } from '../context/AuthContext';
 import ScreenWrapper from '../components/ScreenWrapper';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../context/ThemeContext';
+import AppText from '../components/AppText';
+import AppTextInput from '../components/AppTextInput';
+import AppButton from '../components/AppButton';
 
 const verificationSchema = z.object({
   code: z
@@ -50,15 +53,14 @@ export default function VerificationScreen() {
   return (
     <ScreenWrapper>
       <View style={styles.container}>
-        <Text style={styles.title}>Enter Verification Code</Text>
-
-        {errors.code && <Text style={styles.error}>{errors.code.message}</Text>}
+        <AppText style={styles.title}>Enter Verification Code</AppText>
+        {errors.code && <AppText style={styles.error}>{errors.code.message}</AppText>}
 
         <Controller
           control={control}
           name="code"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
+            <AppTextInput
               placeholder="1234"
               placeholderTextColor={isDarkMode ? '#999' : '#666'}
               keyboardType="numeric"
@@ -71,7 +73,7 @@ export default function VerificationScreen() {
           )}
         />
 
-        <Button title="Verify" onPress={handleSubmit(onSubmit)} />
+        <AppButton title="Verify" onPress={handleSubmit(onSubmit)} />
       </View>
     </ScreenWrapper>
   );

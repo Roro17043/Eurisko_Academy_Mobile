@@ -5,6 +5,7 @@ import ProductCard from '../components/ProductCard';
 import { useNavigation } from '@react-navigation/native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
+import SearchBar from '../components/SearchBar';
 
 export default function ProductListScreen() {
   const navigation = useNavigation<any>();
@@ -14,6 +15,7 @@ export default function ProductListScreen() {
   return (
     <ScreenWrapper>
       <View style={styles.container}>
+        <SearchBar/>
         <FlatList
           data={products.data}
           keyExtractor={item => item._id}

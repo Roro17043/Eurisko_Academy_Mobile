@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   View,
-  Text,
   Image,
   StyleSheet,
   TouchableOpacity,
@@ -12,6 +11,8 @@ import {
 import {useRoute} from '@react-navigation/native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import {useTheme} from '../context/ThemeContext';
+import AppText from '../components/AppText';
+
 
 export default function ProductDetailsScreen() {
   const route = useRoute<any>();
@@ -43,16 +44,16 @@ export default function ProductDetailsScreen() {
           />
 
           <View style={styles.body}>
-            <Text style={themeStyles.title}>{title}</Text>
-            <Text style={styles.price}>{`$${price}`}</Text>
-            <Text style={themeStyles.description}>{description}</Text>
+            <AppText style={themeStyles.title}>{title}</AppText>
+            <AppText style={styles.price}>{`$${price}`}</AppText>
+            <AppText style={themeStyles.description}>{description}</AppText>
 
             <View style={styles.buttonRow}>
               <TouchableOpacity style={[styles.button, styles.shareButton]}>
-                <Text style={styles.buttonText}>Share</Text>
+                <AppText style={styles.buttonText}>Share</AppText>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.button, styles.cartButton]}>
-                <Text style={styles.buttonText}>Add to Cart</Text>
+                <AppText style={styles.buttonText}>Add to Cart</AppText>
               </TouchableOpacity>
             </View>
           </View>
@@ -69,7 +70,7 @@ const getStyles = (isDarkMode: boolean) =>
     },
     title: {
       fontSize: PixelRatio.getFontScale() >= 1.2 ? 24 : 20,
-      fontWeight: 'bold',
+      fontFamily: 'Montserrat-Bold',
       marginBottom: 6,
       color: isDarkMode ? '#fff' : '#222',
     },

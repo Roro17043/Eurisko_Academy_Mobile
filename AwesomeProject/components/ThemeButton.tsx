@@ -1,8 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
-
+import AppText from '../components/AppText';
 export default function ThemeButton({ isDarkMode }: { isDarkMode: boolean }) {
   const { toggleTheme, mode } = useTheme();
   const styles = getStyles(isDarkMode);
@@ -15,7 +15,7 @@ export default function ThemeButton({ isDarkMode }: { isDarkMode: boolean }) {
       <TouchableOpacity style={styles.button} onPress={toggleTheme}>
         <Ionicons name={nextIcon} size={22} style={styles.icon} />
       </TouchableOpacity>
-      <Text style={styles.label}>Theme</Text>
+      <AppText style={styles.label}>Theme</AppText>
     </>
   );
 }

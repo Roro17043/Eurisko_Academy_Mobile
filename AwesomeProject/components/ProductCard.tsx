@@ -1,6 +1,7 @@
 import React from 'react';
-import { Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import AppText from '../components/AppText';
 
 type ProductCardProps = {
   title: string;
@@ -16,8 +17,8 @@ export default function ProductCard({ title, price, imageUrl, onPress }: Product
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <Image source={{ uri: imageUrl }} style={styles.image} />
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.price}>${price}</Text>
+      <AppText style={styles.title}>{title}</AppText>
+      <AppText style={styles.price}>${price}</AppText>
     </TouchableOpacity>
   );
 }
@@ -38,7 +39,7 @@ const getStyles = (isDarkMode: boolean) =>
     },
     title: {
       fontSize: 16,
-      fontWeight: 'bold',
+      fontFamily: 'Montserrat-Bold',
       color: isDarkMode ? '#f1f1f1' : '#000',
     },
     price: {
