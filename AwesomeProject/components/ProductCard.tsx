@@ -1,22 +1,34 @@
 import React from 'react';
-import { Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import {Image, StyleSheet, TouchableOpacity} from 'react-native';
+import {useTheme} from '../context/ThemeContext';
 import AppText from '../components/AppText';
 
 type ProductCardProps = {
+  _id: string;
   title: string;
   price: number;
   imageUrl: string;
   onPress: () => void;
 };
 
-export default function ProductCard({ title, price, imageUrl, onPress }: ProductCardProps) {
-  const { isDarkMode } = useTheme();
+export default function ProductCard({
+  _id,
+  title,
+  price,
+  imageUrl,
+  onPress,
+}: ProductCardProps) {
+  const {isDarkMode} = useTheme();
   const styles = getStyles(isDarkMode);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
-      <Image source={{ uri: imageUrl }} style={styles.image} />
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => {
+        console.log('Product ID pressed:', _id); // ✅ This logs if _id is passed in
+        onPress();
+      }}>
+      <Image source={{uri: imageUrl}} style={styles.image} />
       <AppText style={styles.title}>{title}</AppText>
       <AppText style={styles.price}>${price}</AppText>
     </TouchableOpacity>

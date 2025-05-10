@@ -15,8 +15,13 @@ import AppText from '../components/AppText';
 
 
 export default function ProductDetailsScreen() {
-  const route = useRoute<any>();
-  const {title, description, price, images} = route.params;
+  const route = useRoute();
+ const { title, price, images, description } = route.params as {
+  title: string;
+  price: number;
+  images: { url: string }[];
+  description: string;
+};
 
   const {width, height} = useWindowDimensions();
   const isLandscape = width > height;
