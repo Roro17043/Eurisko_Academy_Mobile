@@ -121,7 +121,7 @@ export default function AddProductScreen() {
 
   const pickImages = async () => {
     const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) return;
+    if (!hasPermission) {return;}
 
     const remainingSlots = 5 - images.length;
     launchImageLibrary(
@@ -320,6 +320,52 @@ export default function AddProductScreen() {
 
 const getStyles = (isDark: boolean) =>
   StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 20,
+      paddingTop: 40,
+      backgroundColor: isDark ? '#121212' : '#fafafa',
+    },
+    label: {
+      fontSize: 15,
+      fontWeight: '600',
+      marginBottom: 6,
+      marginTop: 16,
+      color: isDark ? '#f2f2f2' : '#111',
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: isDark ? '#444' : '#ccc',
+      backgroundColor: isDark ? '#1e1e1e' : '#fff',
+      color: isDark ? '#fff' : '#000',
+      borderRadius: 10,
+      padding: 12,
+      fontSize: 14,
+    },
+    error: {
+      color: '#f44336',
+      fontSize: 12,
+      marginTop: 4,
+    },
+    coords: {
+      marginTop: 8,
+      fontSize: 13,
+      color: isDark ? '#aaa' : '#555',
+    },
+    imagePicker: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      backgroundColor: '#007bff',
+      borderRadius: 10,
+      marginHorizontal: 6,
+    },
+    imagePickerText: {
+      color: '#fff',
+      marginLeft: 8,
+      fontWeight: '500',
+    },
     rowAlignCenter: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -327,81 +373,40 @@ const getStyles = (isDark: boolean) =>
     rowCenter: {
       flexDirection: 'row',
       justifyContent: 'center',
-    },
-    container: {
-      flex: 1,
-      padding: 16,
-      backgroundColor: isDark ? '#000' : '#fff',
-    },
-    label: {
-      color: isDark ? '#fff' : '#000',
-      fontWeight: 'bold',
-      marginTop: 12,
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: '#ccc',
-      backgroundColor: isDark ? '#1a1a1a' : '#f9f9f9',
-      color: isDark ? '#fff' : '#000',
-      borderRadius: 8,
-      padding: 10,
-      marginTop: 4,
-    },
-    error: {
-      color: 'red',
-      marginBottom: 4,
-    },
-    imagePicker: {
       marginTop: 16,
-      marginRight: 10,
-      marginBottom: 8,
-      backgroundColor: '#007bff',
-      padding: 10,
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    imagePickerText: {
-      color: '#fff',
-      marginLeft: 6,
     },
     imageNote: {
       fontSize: 12,
       color: '#888',
-      marginBottom: 8,
-      marginTop: -4,
+      marginTop: 8,
       textAlign: 'center',
+    },
+    imageWrapper: {
+      position: 'relative',
+      marginRight: 10,
+      marginTop: 16,
     },
     image: {
       width: 100,
       height: 100,
-      borderRadius: 8,
-    },
-    imageWrapper: {
-      position: 'relative',
-      marginRight: 8,
-      marginTop: 10,
+      borderRadius: 10,
     },
     removeButton: {
       position: 'absolute',
-      top: -6,
-      right: -6,
-      backgroundColor: 'red',
+      top: -8,
+      right: -8,
+      backgroundColor: '#e53935',
       borderRadius: 12,
       width: 24,
       height: 24,
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 10,
+      zIndex: 1,
+      elevation: 2,
     },
     removeText: {
       color: '#fff',
-      fontWeight: 'bold',
       fontSize: 14,
-    },
-    coords: {
-      marginTop: 8,
-      marginBottom: 4,
-      color: '#444',
+      fontWeight: 'bold',
     },
   });

@@ -6,9 +6,12 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollViewProps,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 
 type ScreenWrapperProps = {
   children: React.ReactNode;
@@ -17,6 +20,8 @@ type ScreenWrapperProps = {
   translucent?: boolean;
   barStyle?: 'dark-content' | 'light-content';
   scrollViewProps?: ScrollViewProps;
+  keyboardVerticalOffset?: number;
+  disableScrollWrap?: boolean; // 👈 NEW
 };
 
 export default function ScreenWrapper({
@@ -26,9 +31,14 @@ export default function ScreenWrapper({
   translucent = false,
   barStyle = 'dark-content',
   scrollViewProps = {},
+  keyboardVerticalOffset = -80,
+  disableScrollWrap = false, // 👈 DEFAULT false
 }: ScreenWrapperProps) {
-  const insets = useSafeAreaInsets(); // ✅ Get safe area values
-  const Wrapper = scroll ? ScrollView : View;
+  const insets = useSafeAreaInsets();
+  const paddingTop = translucent ? insets.top : 0;
+  const dynamicStyles = getDynamicStyles(backgroundColor, paddingTop);
+
+  const Wrapper = scroll && !disableScrollWrap ? ScrollView : View;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
@@ -37,23 +47,27 @@ export default function ScreenWrapper({
         translucent={translucent}
         backgroundColor={translucent ? 'transparent' : backgroundColor}
       />
-      <Wrapper
-        style={[
-          styles.wrapper,
-          { backgroundColor, paddingTop: translucent ? insets.top : 0 }, // ✅ Add safe top padding if translucent
-        ]}
-        {...(scroll
-          ? {
-              contentContainerStyle: {
-                flexGrow: 1,
-                paddingTop: translucent ? insets.top : 0, // ✅ Also add to ScrollView's content
-              },
-              ...scrollViewProps,
-            }
-          : {})}
+
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={keyboardVerticalOffset}
       >
-        {children}
-      </Wrapper>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <Wrapper
+            style={dynamicStyles.wrapper}
+            {...(scroll && !disableScrollWrap
+              ? {
+                  contentContainerStyle: dynamicStyles.scrollContainer,
+                  keyboardShouldPersistTaps: 'handled',
+                  ...scrollViewProps,
+                }
+              : {})}
+          >
+            {children}
+          </Wrapper>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -63,7 +77,21 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  wrapper: {
+  keyboardAvoidingView: {
     flex: 1,
   },
 });
+
+const getDynamicStyles = (backgroundColor: string, paddingTop: number) =>
+  StyleSheet.create({
+    wrapper: {
+      flex: 1,
+      backgroundColor,
+      paddingTop,
+    },
+    scrollContainer: {
+      flexGrow: 1,
+      backgroundColor,
+      paddingTop,
+    },
+  });

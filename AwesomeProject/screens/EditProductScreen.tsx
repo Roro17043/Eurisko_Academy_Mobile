@@ -1,11 +1,13 @@
-import React, {useEffect, useState} from 'react';
-import {View, StyleSheet, ActivityIndicator, Alert, Text} from 'react-native';
-import {useRoute, useNavigation} from '@react-navigation/native';
-import {useForm, Controller} from 'react-hook-form';
-import {z} from 'zod';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {useSelector} from 'react-redux';
-import {RootState} from '../RTKstore';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useSelector } from 'react-redux';
+import { RootState } from '../RTKstore';
+import Toast from 'react-native-toast-message';
+
 import AppTextInput from '../components/AppTextInput';
 import AppButton from '../components/AppButton';
 import ScreenWrapper from '../components/ScreenWrapper';
@@ -41,13 +43,12 @@ export default function EditProductScreen() {
     control,
     handleSubmit,
     reset,
-    formState: {errors},
+    formState: { errors },
     setValue,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
-  // Fetch product on load
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -68,18 +69,21 @@ export default function EditProductScreen() {
         setSelectedLocation(p.location);
         reset(formatted);
       } catch (err) {
-        Alert.alert('Error', 'Could not load product');
+        Toast.show({
+          type: 'error',
+          text1: 'Load Failed',
+          text2: 'Could not load product details.',
+        });
       } finally {
         setLoading(false);
       }
     };
+
     fetchProduct();
   }, [productId, reset, accessToken]);
 
-  // Update location when returning from LocationPicker
   useEffect(() => {
     if (route.params?.location) {
-      console.log('📍 Updated location:', route.params.location);
       setSelectedLocation(route.params.location);
       setValue('location', route.params.location);
     }
@@ -87,7 +91,11 @@ export default function EditProductScreen() {
 
   const onSubmit = async (formData: FormData) => {
     if (!selectedLocation) {
-      Alert.alert('Location is required');
+      Toast.show({
+        type: 'error',
+        text1: 'Missing Location',
+        text2: 'Please select a location before submitting.',
+      });
       return;
     }
 
@@ -99,8 +107,6 @@ export default function EditProductScreen() {
         longitude: selectedLocation.longitude,
       },
     };
-    console.log('🔍 route.params:', route.params);
-
 
     try {
       await api.put(`/products/${productId}`, updatedData, {
@@ -109,16 +115,32 @@ export default function EditProductScreen() {
         },
       });
 
-      Alert.alert('Success', 'Product updated');
+      Toast.show({
+        type: 'success',
+        text1: 'Product Updated',
+        text2: 'Your product was updated successfully.',
+      });
+
       navigation.goBack();
-    } catch (err) {
-      Alert.alert('Error', 'Update failed');
-      console.error('Update error:', err);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const message =
+        status === 500
+          ? 'Update failed: image unsupported or too large (max 5MB).'
+          : err?.response?.data?.message || 'Unexpected error occurred.';
+
+      Toast.show({
+        type: 'error',
+        text1: 'Update Failed',
+        text2: message,
+      });
+
+      console.error('Update error:', err?.response?.data || err.message);
     }
   };
 
   if (loading || !initialData) {
-    return <ActivityIndicator style={{flex: 1}} size="large" />;
+    return <ActivityIndicator style={{ flex: 1 }} size="large" />;
   }
 
   return (
@@ -127,7 +149,7 @@ export default function EditProductScreen() {
         <Controller
           control={control}
           name="title"
-          render={({field: {onChange, value}}) => (
+          render={({ field: { onChange, value } }) => (
             <AppTextInput
               placeholder="Title"
               value={value}
@@ -135,10 +157,11 @@ export default function EditProductScreen() {
             />
           )}
         />
+
         <Controller
           control={control}
           name="description"
-          render={({field: {onChange, value}}) => (
+          render={({ field: { onChange, value } }) => (
             <AppTextInput
               placeholder="Description"
               value={value}
@@ -147,10 +170,11 @@ export default function EditProductScreen() {
             />
           )}
         />
+
         <Controller
           control={control}
           name="price"
-          render={({field: {onChange, value}}) => (
+          render={({ field: { onChange, value } }) => (
             <AppTextInput
               placeholder="Price"
               value={String(value)}
@@ -159,10 +183,11 @@ export default function EditProductScreen() {
             />
           )}
         />
+
         <Controller
           control={control}
           name="locationName"
-          render={({field: {onChange, value}}) => (
+          render={({ field: { onChange, value } }) => (
             <AppTextInput
               placeholder="Location Name"
               value={value}
@@ -171,7 +196,7 @@ export default function EditProductScreen() {
           )}
         />
         {errors.locationName && (
-          <Text style={{color: 'red'}}>{errors.locationName.message}</Text>
+          <Text style={{ color: 'red' }}>{errors.locationName.message}</Text>
         )}
 
         <AppButton
@@ -185,16 +210,11 @@ export default function EditProductScreen() {
         />
 
         {selectedLocation && (
-          <Text style={{marginVertical: 10}}>
-            📍 {selectedLocation.latitude.toFixed(5)},{' '}
+          <Text style={{ marginVertical: 10 }}>
+            📍 {selectedLocation.latitude.toFixed(5)},
             {selectedLocation.longitude.toFixed(5)}
           </Text>
         )}
-
-        {errors.locationName &&
-          typeof errors.locationName.message === 'string' && (
-            <Text style={{color: 'red'}}>{errors.locationName.message}</Text>
-          )}
 
         <AppButton title="Save Changes" onPress={handleSubmit(onSubmit)} />
       </View>

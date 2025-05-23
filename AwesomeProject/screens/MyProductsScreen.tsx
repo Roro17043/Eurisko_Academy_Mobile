@@ -16,6 +16,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import AppText from '../components/AppText';
 import {useTheme} from '../context/ThemeContext';
 import api from '../services/api';
+import ThemedToast from '../components/ThemedToast';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
@@ -32,7 +33,7 @@ export default function MyProductsScreen() {
 
   const fetchMyProducts = async () => {
     try {
-      setLoading(true); // optional: show loading during refetch
+      setLoading(true); 
       let page = 1;
       let allProducts: any[] = [];
       let hasNext = true;
@@ -52,16 +53,13 @@ export default function MyProductsScreen() {
       const filtered = allProducts.filter(
         (product: any) => product.user?._id === userId,
       );
-      console.log('📦 My Product IDs:');
+    
       filtered.forEach(p => console.log(`- ${p._id}`));
 
       setMyProducts(filtered);
     } catch (err: any) {
-      console.error(
-        '❌ Product fetch error:',
-        err?.response?.data || err.message || err,
-      );
-      Alert.alert('Error', 'Failed to fetch products');
+      
+    
     } finally {
       setLoading(false);
     }
@@ -104,7 +102,7 @@ export default function MyProductsScreen() {
   );
 
   return (
-    <ScreenWrapper scroll>
+    <ScreenWrapper scroll={false}>
       <View style={styles.container}>
         {loading ? (
           <ActivityIndicator size="large" style={{marginTop: 50}} />

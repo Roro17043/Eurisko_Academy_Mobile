@@ -11,8 +11,11 @@ import AppText from '../components/AppText';
 import AppTextInput from '../components/AppTextInput';
 import {useDispatch} from 'react-redux';
 import {AppDispatch} from '../RTKstore';
-import { setCredentials, setMyProducts } from '../RTKstore/slices/authSlice';
+import {setCredentials} from '../RTKstore/slices/authSlice';
 import api from '../services/api';
+import {useThemedToast} from '../services/ShowToast';
+import Icon from 'react-native-vector-icons/Ionicons';
+import {useState} from 'react';
 
 const loginSchema = z.object({
   email: z.union([
@@ -34,7 +37,8 @@ export default function LoginScreen() {
   const {isDarkMode} = useTheme();
   const styles = getStyles(isDarkMode);
   const dispatch = useDispatch<AppDispatch>();
-
+  const {showErrorToast} = useThemedToast();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -50,53 +54,57 @@ export default function LoginScreen() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-  try {
-    // Step 1: Login to get tokens
-    const loginRes = await api.post('/auth/login', data);
-    const { accessToken, refreshToken } = loginRes.data.data;
+    try {
+      // Step 1: Login to get tokens
+      const loginRes = await api.post('/auth/login', data);
+      const {accessToken, refreshToken} = loginRes.data.data;
 
-    // Step 2: Get user profile using token
-    const profileRes = await api.get('/user/profile', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-    const user = profileRes.data.data.user;
-
-
-    // Step 5: Save tokens + user + myProducts in Redux
-    dispatch(
-      setCredentials({
-        accessToken,
-        refreshToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          profileImage: user.profileImage,
+      // Step 2: Get user profile using token
+      const profileRes = await api.get('/user/profile', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
-      })
-    );
+      });
+      const user = profileRes.data.data.user;
 
-    console.log('✅ Login successful, user + products saved');
-    // console.log('📦 All fetched products:', allProducts);
+      // Step 5: Save tokens + user + myProducts in Redux
+      dispatch(
+        setCredentials({
+          accessToken,
+          refreshToken,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            profileImage: user.profileImage,
+          },
+        }),
+      );
+    } catch (err: any) {
+      const statusCode = err?.response?.status;
+      const errorMessage = err?.response?.data?.message;
 
-    console.log('👤 Current user ID:', user.id);
+      if (statusCode === 404) {
+        setError('email', {message: 'Email not found'});
+        return;
+      }
 
+      if (statusCode === 401) {
+        setError('password', {message: 'Incorrect password'});
+        return;
+      }
 
-    // Navigate as usual (e.g., home/dashboard)
-    // navigation.navigate('TabViews'); // if needed
+      // Fallback for all other backend or API-level issues
+      const message =
+        errorMessage ||
+        (statusCode === 521
+          ? 'Server is down. Please try again shortly.'
+          : 'Login failed. Please try again.');
 
-  } catch (err: any) {
-    const message = err?.response?.data?.message || 'Login failed';
-    setError('email', { message: 'Invalid email or username' });
-    setError('password', { message: 'Check your password' });
-    console.error('❌ Login error:', message);
-  }
-};
-
-
+      showErrorToast(message);
+    }
+  };
 
   return (
     <ScreenWrapper>
@@ -129,15 +137,26 @@ export default function LoginScreen() {
           control={control}
           name="password"
           render={({field: {onChange, onBlur, value}}) => (
-            <AppTextInput
-              placeholder="Password"
-              placeholderTextColor={isDarkMode ? '#999' : '#666'}
-              style={styles.input}
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value}
-              secureTextEntry
-            />
+            <View style={styles.inputWithIcon}>
+              <AppTextInput
+                placeholder="Password"
+                placeholderTextColor={isDarkMode ? '#999' : '#666'}
+                style={styles.input}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                value={value}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(prev => !prev)}
+                style={styles.eyeIcon}>
+                <Icon
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={22}
+                  color={isDarkMode ? '#fff' : '#333'}
+                />
+              </TouchableOpacity>
+            </View>
           )}
         />
 
@@ -149,15 +168,6 @@ export default function LoginScreen() {
             <AppText style={styles.signupLink}>Sign up</AppText>
           </AppText>
         </TouchableOpacity>
-
-        <AppButton
-          title="Go to Verification"
-          onPress={() =>
-            navigation.navigate('Verification', {
-              email: 'rouhanasalameh83@gmail.com',
-            })
-          }
-        />
       </View>
     </ScreenWrapper>
   );
@@ -183,9 +193,25 @@ const getStyles = (isDarkMode: boolean) =>
       backgroundColor: isDarkMode ? '#2a2a2d' : '#fff',
       color: isDarkMode ? '#fff' : '#000',
       padding: 10,
-      marginBottom: 10,
+      paddingRight: 40,
       borderRadius: 6,
     },
+    inputFlex: {
+      flex: 1,
+    },
+    inputWithIcon: {
+      position: 'relative',
+      marginBottom: 10,
+    },
+
+    eyeIcon: {
+      position: 'absolute',
+      right: 12,
+      top: '40%',
+      transform: [{translateY: -11}],
+      zIndex: 1,
+    },
+
     error: {
       color: 'red',
       marginBottom: 10,
