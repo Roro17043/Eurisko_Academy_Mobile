@@ -16,7 +16,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import AppText from '../components/AppText';
 import {useTheme} from '../context/ThemeContext';
 import api from '../services/api';
-import ThemedToast from '../components/ThemedToast';
+import { useThemedToast } from '../services/ShowToast';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
@@ -27,13 +27,14 @@ export default function MyProductsScreen() {
 
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
+   const { showErrorToast, showSuccessToast } = useThemedToast();
 
   const [myProducts, setMyProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchMyProducts = async () => {
+  const fetchMyProducts = useCallback(async () => {
     try {
-      setLoading(true); 
+      setLoading(true);
       let page = 1;
       let allProducts: any[] = [];
       let hasNext = true;
@@ -53,17 +54,21 @@ export default function MyProductsScreen() {
       const filtered = allProducts.filter(
         (product: any) => product.user?._id === userId,
       );
-    
-      filtered.forEach(p => console.log(`- ${p._id}`));
 
       setMyProducts(filtered);
     } catch (err: any) {
-      
-    
+
+      showErrorToast('Could not load product details.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyProducts();
+    }, [fetchMyProducts]),
+  );
 
   const deleteProduct = async (productId: string) => {
     Alert.alert(
@@ -105,9 +110,16 @@ export default function MyProductsScreen() {
     <ScreenWrapper scroll={false}>
       <View style={styles.container}>
         {loading ? (
-          <ActivityIndicator size="large" style={{marginTop: 50}} />
+          <ActivityIndicator size="large" style={styles.loadingcontainer} />
         ) : myProducts.length === 0 ? (
-          <Text style={styles.empty}>No products added yet.</Text>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.empty}>No products added yet.</Text>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={fetchMyProducts}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <FlatList
             data={myProducts}
@@ -159,6 +171,29 @@ const getStyles = (isDarkMode: boolean) =>
       backgroundColor: isDarkMode ? '#1c1c1e' : '#fff',
       flexGrow: 1,
     },
+    loadingcontainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 40,
+    },
+    retryButton: {
+      marginTop: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      backgroundColor: '#007bff',
+      borderRadius: 6,
+    },
+    retryText: {
+      color: '#fff',
+      fontWeight: '600',
+    },
+
     empty: {
       textAlign: 'center',
       color: '#999',
