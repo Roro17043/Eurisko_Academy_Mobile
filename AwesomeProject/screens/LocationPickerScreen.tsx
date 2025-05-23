@@ -4,7 +4,7 @@ import MapView, { Marker, LongPressEvent } from 'react-native-maps';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import type { RootStackParamList } from '../navigation/RootParamNavigation'; // Adjust path if needed
+import type { RootStackParamList } from '../navigation/RootParamNavigation';
 
 export default function LocationPickerScreen() {
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -26,10 +26,19 @@ export default function LocationPickerScreen() {
       return;
     }
 
-    // Navigate back to AddProduct or EditProduct and pass location
-    navigation.navigate(route.params.from, {
-      location: selectedLocation,
-    });
+    if (route.params.from === 'EditProduct') {
+      navigation.goBack();
+      setTimeout(() => {
+        navigation.navigate('EditProduct', {
+          productId: route.params.productId!,
+          location: selectedLocation,
+        });
+      }, 0);
+    } else {
+      navigation.navigate('AddProduct', {
+        location: selectedLocation,
+      });
+    }
   };
 
   return (
@@ -37,7 +46,7 @@ export default function LocationPickerScreen() {
       <MapView
         style={StyleSheet.absoluteFillObject}
         initialRegion={{
-          latitude: 33.8938, // Default location: Beirut
+          latitude: 33.8938,
           longitude: 35.5018,
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,

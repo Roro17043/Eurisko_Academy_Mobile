@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   StyleSheet,
   ActivityIndicator,
@@ -8,14 +8,15 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import ProductCard from '../components/ProductCard';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import ScreenWrapper from '../components/ScreenWrapper';
-import { useTheme } from '../context/ThemeContext';
+import {useTheme} from '../context/ThemeContext';
 import SearchBar from '../components/SearchBar';
-import { useSelector } from 'react-redux';
-import { RootState } from '../RTKstore';
+import {useSelector} from 'react-redux';
+import {RootState} from '../RTKstore';
 import api from '../services/api';
 import AppButton from '../components/AppButton';
+import AppTextInput from '../components/AppTextInput';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
@@ -24,12 +25,12 @@ export type Product = {
   title: string;
   description: string;
   price: number;
-  images: { url: string }[];
+  images: {url: string}[];
 };
 
 export default function ProductScreen() {
   const navigation = useNavigation<any>();
-  const { isDarkMode } = useTheme();
+  const {isDarkMode} = useTheme();
   const styles = getStyles(isDarkMode);
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
 
@@ -37,6 +38,9 @@ export default function ProductScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -72,6 +76,43 @@ export default function ProductScreen() {
       setRefreshing(false);
     }
   };
+ const fetchSearchedProducts = async (query: string, min?: string, max?: string) => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const response = await api.get('/products/search', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      params: { query },
+    });
+
+    let filtered = response.data.data;
+
+    const minVal = min ? Number(min) : null;
+    const maxVal = max ? Number(max) : null;
+
+    filtered = filtered.filter((item: Product) => {
+      if (minVal !== null && item.price < minVal) return false;
+      if (maxVal !== null && item.price > maxVal) return false;
+      return true;
+    });
+
+    // ✅ Fully reset state
+    setProducts(filtered);
+    setCurrentPage(1);
+    setTotalPages(1); // <-- hide pagination
+  } catch (err: any) {
+    setError(err.message || 'Failed to search products');
+    setProducts([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
 
   useEffect(() => {
     fetchProducts(1); // initial load
@@ -82,46 +123,48 @@ export default function ProductScreen() {
     fetchProducts(page);
   };
 
-  const renderPagination = () => {
-    const pageButtons = [];
+const renderPagination = () => {
+  if (searchQuery || minPrice || maxPrice) return null; // 🔒 disables it during search
 
-    for (let i = 1; i <= totalPages; i++) {
-      pageButtons.push(
-        <TouchableOpacity
-          key={i}
-          onPress={() => handlePageChange(i)}
-          style={[
-            styles.pageButton,
-            currentPage === i && styles.activePageButton,
-          ]}
-        >
-          <Text style={styles.pageText}>{i}</Text>
-        </TouchableOpacity>
-      );
-    }
-
-    return (
-      <View style={styles.paginationContainer}>
-        <TouchableOpacity
-          onPress={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          style={styles.pageButton}
-        >
-          <Text style={styles.pageText}>Prev</Text>
-        </TouchableOpacity>
-
-        {pageButtons}
-
-        <TouchableOpacity
-          onPress={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          style={styles.pageButton}
-        >
-          <Text style={styles.pageText}>Next</Text>
-        </TouchableOpacity>
-      </View>
+  const pageButtons = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pageButtons.push(
+      <TouchableOpacity
+        key={i}
+        onPress={() => handlePageChange(i)}
+        style={[
+          styles.pageButton,
+          currentPage === i && styles.activePageButton,
+        ]}
+      >
+        <Text style={styles.pageText}>{i}</Text>
+      </TouchableOpacity>
     );
-  };
+  }
+
+  return (
+    <View style={styles.paginationContainer}>
+      <TouchableOpacity
+        onPress={() => handlePageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        style={styles.pageButton}
+      >
+        <Text style={styles.pageText}>Prev</Text>
+      </TouchableOpacity>
+
+      {pageButtons}
+
+      <TouchableOpacity
+        onPress={() => handlePageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        style={styles.pageButton}
+      >
+        <Text style={styles.pageText}>Next</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 
   return (
     <ScreenWrapper
@@ -137,9 +180,37 @@ export default function ProductScreen() {
             }}
           />
         ),
-      }}
-    >
-      <SearchBar />
+      }}>
+      <SearchBar
+  value={searchQuery}
+  onChangeText={(text) => {
+    setSearchQuery(text);
+    fetchSearchedProducts(text, minPrice, maxPrice);
+  }}
+/>
+<View style={{ flexDirection: 'row', gap: 12, marginVertical: 8 }}>
+  <AppTextInput
+    placeholder="Min Price"
+    keyboardType="numeric"
+    value={minPrice}
+    onChangeText={(text) => {
+      setMinPrice(text);
+      fetchSearchedProducts(searchQuery, text, maxPrice);
+    }}
+    style={{ flex: 1 }}
+  />
+  <AppTextInput
+    placeholder="Max Price"
+    keyboardType="numeric"
+    value={maxPrice}
+    onChangeText={(text) => {
+      setMaxPrice(text);
+      fetchSearchedProducts(searchQuery, minPrice, text);
+    }}
+    style={{ flex: 1 }}
+  />
+</View>
+
 
       {loading && !refreshing && <ActivityIndicator size="large" />}
 
@@ -149,7 +220,7 @@ export default function ProductScreen() {
           <AppButton
             title="Retry"
             onPress={() => fetchProducts(currentPage)}
-            style={{ marginTop: 16 }}
+            style={{marginTop: 16}}
           />
         </>
       ) : products.length === 0 ? (
@@ -158,13 +229,13 @@ export default function ProductScreen() {
           <AppButton
             title="Retry"
             onPress={() => fetchProducts(currentPage)}
-            style={{ marginTop: 16 }}
+            style={{marginTop: 16}}
           />
         </>
       ) : (
         <>
-          {products.map((product) => {
-            const fullImages = product.images.map((img) => ({
+          {products.map(product => {
+            const fullImages = product.images.map(img => ({
               uri: `${IMAGE_BASE_URL}${img.url}`,
             }));
 
