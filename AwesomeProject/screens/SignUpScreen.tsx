@@ -1,162 +1,142 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
+  View,
   StyleSheet,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
+  Alert,
+  Text,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Feather';
+import {useForm} from 'react-hook-form';
 import {z} from 'zod';
+import {zodResolver} from '@hookform/resolvers/zod';
+import {useNavigation} from '@react-navigation/native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import {useTheme} from '../context/ThemeContext';
-import {TouchableOpacity} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import AppButton from '../components/AppButton';
-import AppText from '../components/AppText';
-import AppTextInput from '../components/AppTextInput';
 
-// Zod schema
-const signUpSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
+import AppTextInput from '../components/AppTextInput';
+import AppButton from '../components/AppButton';
+import api from '../services/api'; // Your configured Axios instance
+
+// -------------------- Schema --------------------
+
+const SignUpSchema = z.object({
+  firstName: z.string().min(2, 'First name is required'),
+  lastName: z.string().min(2, 'Last name is required'),
   email: z.string().email('Invalid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
 });
 
+type SignUpFormData = z.infer<typeof SignUpSchema>;
+
+// -------------------- Component --------------------
+
 export default function SignUpScreen() {
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: '',
-  });
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const {isDarkMode} = useTheme();
-  const styles = getStyles(isDarkMode);
   const navigation = useNavigation<any>();
+  const [showPassword, setShowPassword] = React.useState(false);
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
 
-  const handleChange = (field: string, value: string) => {
-    setForm({...form, [field]: value});
-    setErrors({...errors, [field]: ''});
-  };
+  const {
+    setValue,
+    handleSubmit,
+    formState: {errors},
+  } = useForm<SignUpFormData>({
+    resolver: zodResolver(SignUpSchema),
+  });
 
-  const handleSubmit = () => {
-    const result = signUpSchema.safeParse(form);
+  const onSubmit = async (data: SignUpFormData) => {
+    try {
+      const response = await api.post('/auth/signup', data); // JSON payload
 
-    if (!result.success) {
-      const fieldErrors: {[key: string]: string} = {};
-      result.error.errors.forEach(err => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as string] = err.message;
-        }
-      });
-      setErrors(fieldErrors);
-      return;
+      if (response.data?.success) {
+        Alert.alert('Success', 'User created. Please login and verify OTP.');
+        navigation.navigate('Login');
+      } else {
+        throw new Error('Signup failed');
+      }
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Signup failed';
+      Alert.alert('Signup Error', message);
     }
-
-    console.log('User signed up:', form);
   };
 
   return (
-    <ScreenWrapper>
-      <KeyboardAvoidingView
-        style={styles.wrapper}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView
-            contentContainerStyle={styles.container}
-            keyboardShouldPersistTaps="handled">
-            <AppText style={styles.title}>Sign Up</AppText>
+   <ScreenWrapper>
+  <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Sign Up</Text>
 
-            {errors.name && (
-              <AppText style={styles.error}>{errors.name}</AppText>
-            )}
-            <AppTextInput
-              placeholder="Name"
-              placeholderTextColor={isDarkMode ? '#999' : '#666'}
-              style={styles.input}
-              value={form.name}
-              onChangeText={value => handleChange('name', value)}
-            />
+        <AppTextInput
+          placeholder="First Name"
+          onChangeText={text => setValue('firstName', text)}
+          error={errors.firstName?.message}
+        />
+        <AppTextInput
+          placeholder="Last Name"
+          onChangeText={text => setValue('lastName', text)}
+          error={errors.lastName?.message}
+        />
+        <AppTextInput
+          placeholder="Email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          onChangeText={text => setValue('email', text)}
+          error={errors.email?.message}
+        />
+        <View style={styles.passwordContainer}>
+          <AppTextInput
+            placeholder="Password"
+            secureTextEntry={!showPassword}
+            onChangeText={text => setValue('password', text)}
+            error={errors.password?.message}
+            style={styles.passwordInput}
+          />
+          <Icon
+            name={showPassword ? 'eye' : 'eye-off'}
+            size={20}
+            color="#888"
+            onPress={() => setShowPassword(prev => !prev)}
+            style={styles.eyeIcon}
+          />
+        </View>
 
-            {errors.email && (
-              <AppText style={styles.error}>{errors.email}</AppText>
-            )}
-            <AppTextInput
-              placeholder="Email"
-              placeholderTextColor={isDarkMode ? '#999' : '#666'}
-              style={styles.input}
-              value={form.email}
-              onChangeText={value => handleChange('email', value)}
-              autoCapitalize="none"
-            />
+        <AppButton title="Register" onPress={handleSubmit(onSubmit)} />
 
-            {errors.password && (
-              <AppText style={styles.error}>{errors.password}</AppText>
-            )}
-            <AppTextInput
-              placeholder="Password"
-              placeholderTextColor={isDarkMode ? '#999' : '#666'}
-              style={styles.input}
-              value={form.password}
-              onChangeText={value => handleChange('password', value)}
-              secureTextEntry
-            />
-
-            {errors.phone && (
-              <AppText style={styles.error}>{errors.phone}</AppText>
-            )}
-            <AppTextInput
-              placeholder="Phone Number"
-              placeholderTextColor={isDarkMode ? '#999' : '#666'}
-              style={styles.input}
-              value={form.phone}
-              onChangeText={value => handleChange('phone', value)}
-              keyboardType="phone-pad"
-            />
-
-            <AppButton title="Register" onPress={handleSubmit} />
-
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <AppText style={styles.loginText}>
-                Already have an account?{' '}
-                <AppText style={styles.loginLink}>Login</AppText>
-              </AppText>
-            </TouchableOpacity>
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+        <Text style={styles.loginText}>
+          Already have an account?{' '}
+          <Text
+            style={styles.loginLink}
+            onPress={() => navigation.navigate('Verification')}>
+            Login
+          </Text>
+        </Text>
+      </ScrollView>
     </ScreenWrapper>
   );
 }
 
+// -------------------- Styles --------------------
+
 const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
+    wrapper: {
+      flex: 1,
+    },
     container: {
       padding: 20,
-      flexGrow: 1,
       justifyContent: 'center',
-      backgroundColor: isDarkMode ? '#1c1c1e' : '#fff',
+      flexGrow: 1,
     },
     title: {
       fontSize: 24,
       marginBottom: 20,
       textAlign: 'center',
+      fontWeight: 'bold',
       color: isDarkMode ? '#f1f1f1' : '#000',
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: isDarkMode ? '#333' : '#ccc',
-      backgroundColor: isDarkMode ? '#2a2a2d' : '#fff',
-      color: isDarkMode ? '#f1f1f1' : '#000',
-      padding: 10,
-      borderRadius: 6,
-      marginBottom: 10,
-    },
-    error: {
-      color: 'red',
-      marginBottom: 10,
     },
     loginText: {
       marginTop: 20,
@@ -165,9 +145,19 @@ const getStyles = (isDarkMode: boolean) =>
     },
     loginLink: {
       fontWeight: 'bold',
-      color: isDarkMode ? '#fff' : '#000',
+      color: isDarkMode ? '#fff' : '#007BFF',
     },
-    wrapper: {
-      flex: 1,
+    eyeIcon: {
+      position: 'absolute',
+      right: 12,
+      top: 18,
+    },
+    passwordContainer: {
+      position: 'relative',
+      marginBottom: 12,
+    },
+    passwordInput: {
+      paddingRight: 40,
     },
   });
+

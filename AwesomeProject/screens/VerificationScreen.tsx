@@ -1,20 +1,21 @@
-import React from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useAuth } from '../context/AuthContext';
-import ScreenWrapper from '../components/ScreenWrapper';
-import Toast from 'react-native-toast-message';
 import { useTheme } from '../context/ThemeContext';
+import ScreenWrapper from '../components/ScreenWrapper';
 import AppText from '../components/AppText';
 import AppTextInput from '../components/AppTextInput';
 import AppButton from '../components/AppButton';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import api from '../services/api';
+import Toast from 'react-native-toast-message';
 
 const verificationSchema = z.object({
   code: z
     .string()
-    .length(4, 'Code must be exactly 4 digits')
+    .length(6, 'Code must be exactly 6 digits')
     .regex(/^\d+$/, 'Code must contain only numbers'),
 });
 
@@ -23,7 +24,12 @@ type VerificationFormData = z.infer<typeof verificationSchema>;
 export default function VerificationScreen() {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
-  const { login } = useAuth();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const email = route.params?.email;
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [timer, setTimer] = useState(60);
 
   const {
     control,
@@ -32,48 +38,113 @@ export default function VerificationScreen() {
   } = useForm<VerificationFormData>({
     resolver: zodResolver(verificationSchema),
     defaultValues: {
-      code: '1234',
+      code: '',
     },
   });
 
-  const onSubmit = (data: VerificationFormData) => {
-    if (data.code === '1234') {
+  // Countdown timer
+  useEffect(() => {
+    if (timer <= 0) {return};
+
+    const interval = setInterval(() => {
+      setTimer(prev => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timer]);
+
+  // Submit OTP
+  const onSubmit = async (data: VerificationFormData) => {
+    try {
+      setIsLoading(true);
+
+      const response = await api.post('/auth/verify-otp', {
+        email,
+        otp: data.code,
+      });
+
+      const result = response.data;
+
+      if (!result.success) {
+        throw new Error(result?.data?.message || 'Verification failed');
+      }
+
       Toast.show({
         type: 'success',
-        text1: 'Verification successful!',
+        text1: 'Verified!',
+        text2: 'Your account has been verified.',
         position: 'top',
-        visibilityTime: 2000,
       });
-      login();
-    } else {
-      Alert.alert('Error', 'Incorrect code. Please try again.');
+
+      navigation.navigate('Login');
+    } catch (err: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Verification Failed',
+        text2: err?.response?.data?.message || err.message || 'Something went wrong.',
+        position: 'top',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    try {
+      await api.post('/auth/resend-verification-otp', { email });
+
+      Toast.show({
+        type: 'success',
+        text1: 'OTP Sent',
+        text2: 'A new code was sent to your email.',
+        position: 'top',
+      });
+
+      setTimer(60);
+    } catch (err: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to Resend',
+        text2: err?.response?.data?.message || err.message || 'Something went wrong.',
+        position: 'top',
+      });
     }
   };
 
   return (
     <ScreenWrapper>
       <View style={styles.container}>
-        <AppText style={styles.title}>Enter Verification Code</AppText>
-        {errors.code && <AppText style={styles.error}>{errors.code.message}</AppText>}
+        <AppText style={styles.title}>Enter OTP Code</AppText>
 
         <Controller
           control={control}
           name="code"
           render={({ field: { onChange, onBlur, value } }) => (
             <AppTextInput
-              placeholder="1234"
-              placeholderTextColor={isDarkMode ? '#999' : '#666'}
+              placeholder="123456"
               keyboardType="numeric"
-              style={styles.input}
+              maxLength={6}
               onBlur={onBlur}
               onChangeText={onChange}
               value={value}
-              maxLength={4}
+              style={styles.input}
+              error={errors.code?.message}
             />
           )}
         />
 
-        <AppButton title="Verify" onPress={handleSubmit(onSubmit)} />
+        <AppText style={styles.timerText}>
+          {timer > 0 ? `OTP expires in 00:${String(timer).padStart(2, '0')}` : ''}
+        </AppText>
+
+        <AppButton title="Verify" onPress={handleSubmit(onSubmit)} disabled={isLoading} />
+        <AppButton
+          title="Resend OTP"
+          onPress={handleResendOtp}
+          disabled={timer > 0}
+          style={styles.resendButton}
+        />
       </View>
     </ScreenWrapper>
   );
@@ -89,13 +160,14 @@ const getStyles = (isDarkMode: boolean) =>
     },
     title: {
       fontSize: 24,
-      marginBottom: 20,
+      marginBottom: 30,
       textAlign: 'center',
+      fontWeight: 'bold',
       color: isDarkMode ? '#f1f1f1' : '#000',
     },
     input: {
       borderWidth: 1,
-      borderColor: isDarkMode ? '#333' : '#ccc',
+      borderColor: isDarkMode ? '#444' : '#ccc',
       backgroundColor: isDarkMode ? '#2a2a2d' : '#fff',
       color: isDarkMode ? '#f1f1f1' : '#000',
       padding: 15,
@@ -104,10 +176,16 @@ const getStyles = (isDarkMode: boolean) =>
       textAlign: 'center',
       marginBottom: 10,
       borderRadius: 8,
+      fontFamily: 'Montserrat-Regular',
     },
-    error: {
-      color: 'red',
-      marginBottom: 10,
+    timerText: {
       textAlign: 'center',
+      color: isDarkMode ? '#aaa' : '#555',
+      marginBottom: 16,
+      fontSize: 14,
+    },
+    resendButton: {
+      marginTop: 10,
+      backgroundColor: '#666',
     },
   });

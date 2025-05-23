@@ -1,45 +1,69 @@
-// components/ScreenWrapper.tsx
-// Used to wrap screens with a consistent layout and styling
-// Used for the status bar and safe area view
 import React from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar, StyleSheet } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import  SettingsFAB from '../components/SettingsFAB';
+import {
+  ScrollView,
+  View,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ScrollViewProps,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type Props = {
+
+type ScreenWrapperProps = {
   children: React.ReactNode;
+  scroll?: boolean;
   backgroundColor?: string;
-  barStyle?: 'dark-content' | 'light-content';
   translucent?: boolean;
+  barStyle?: 'dark-content' | 'light-content';
+  scrollViewProps?: ScrollViewProps;
 };
 
 export default function ScreenWrapper({
   children,
-  backgroundColor,
-  barStyle,
+  scroll = false,
+  backgroundColor = '#fff',
   translucent = false,
-}: Props) {
-  const { isDarkMode } = useTheme();
-
-  const bg = backgroundColor ?? (isDarkMode ? '#000' : '#f1f1f1');
-  const bar = barStyle ?? (isDarkMode ? 'light-content' : 'dark-content');
+  barStyle = 'dark-content',
+  scrollViewProps = {},
+}: ScreenWrapperProps) {
+  const insets = useSafeAreaInsets(); // ✅ Get safe area values
+  const Wrapper = scroll ? ScrollView : View;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
       <StatusBar
-        barStyle={bar}
+        barStyle={barStyle}
         translucent={translucent}
-        backgroundColor={translucent ? 'transparent' : bg}
+        backgroundColor={translucent ? 'transparent' : backgroundColor}
       />
-      {children}
-      <SettingsFAB />
+      <Wrapper
+        style={[
+          styles.wrapper,
+          { backgroundColor, paddingTop: translucent ? insets.top : 0 }, // ✅ Add safe top padding if translucent
+        ]}
+        {...(scroll
+          ? {
+              contentContainerStyle: {
+                flexGrow: 1,
+                paddingTop: translucent ? insets.top : 0, // ✅ Also add to ScrollView's content
+              },
+              ...scrollViewProps,
+            }
+          : {})}
+      >
+        {children}
+      </Wrapper>
     </SafeAreaView>
   );
 }
 
+
 const styles = StyleSheet.create({
-  safe: {
+  safeArea: {
+    flex: 1,
+  },
+  wrapper: {
     flex: 1,
   },
 });

@@ -1,49 +1,235 @@
-import React from 'react';
-import {FlatList, View, StyleSheet} from 'react-native';
-import products from '../data/Phones.json';
+import React, { useEffect, useState } from 'react';
+import {
+  StyleSheet,
+  ActivityIndicator,
+  Text,
+  RefreshControl,
+  View,
+  TouchableOpacity,
+} from 'react-native';
 import ProductCard from '../components/ProductCard';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import ScreenWrapper from '../components/ScreenWrapper';
-import {useTheme} from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 import SearchBar from '../components/SearchBar';
+import { useSelector } from 'react-redux';
+import { RootState } from '../RTKstore';
+import api from '../services/api';
+import AppButton from '../components/AppButton';
 
+const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
+
+export type Product = {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  images: { url: string }[];
+};
 
 export default function ProductScreen() {
   const navigation = useNavigation<any>();
-  const {isDarkMode} = useTheme();
+  const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
+  const accessToken = useSelector((state: RootState) => state.auth.accessToken);
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchProducts = async (page = 1) => {
+    if (!refreshing) setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.get('/products', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        params: {
+          page,
+          limit: 10,
+        },
+      });
+
+      if (response.data.success) {
+        setProducts(response.data.data);
+        const pagination = response.data.pagination;
+        setCurrentPage(pagination.currentPage);
+        setTotalPages(pagination.totalPages);
+      } else {
+        throw new Error('API returned error');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch products');
+      setProducts([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts(1); // initial load
+  }, []);
+
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    fetchProducts(page);
+  };
+
+  const renderPagination = () => {
+    const pageButtons = [];
+
+    for (let i = 1; i <= totalPages; i++) {
+      pageButtons.push(
+        <TouchableOpacity
+          key={i}
+          onPress={() => handlePageChange(i)}
+          style={[
+            styles.pageButton,
+            currentPage === i && styles.activePageButton,
+          ]}
+        >
+          <Text style={styles.pageText}>{i}</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <View style={styles.paginationContainer}>
+        <TouchableOpacity
+          onPress={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          style={styles.pageButton}
+        >
+          <Text style={styles.pageText}>Prev</Text>
+        </TouchableOpacity>
+
+        {pageButtons}
+
+        <TouchableOpacity
+          onPress={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          style={styles.pageButton}
+        >
+          <Text style={styles.pageText}>Next</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
-    <ScreenWrapper>
-      <View style={styles.container}>
-        <SearchBar />
-        <FlatList
-          data={products.data}
-          keyExtractor={item => item._id}
-          renderItem={({item}) => (
-            <ProductCard
-              _id={item._id}
-              title={item.title}
-              price={item.price}
-              imageUrl={item.images[0].url}
-              onPress={() => {
-                console.log('Product Pressed', `Product ID: ${item._id}`);
-                navigation.navigate('ProductDetails', {...item});
-              }}
-            />
-          )}
-        />
-      </View>
+    <ScreenWrapper
+      scroll
+      scrollViewProps={{
+        contentContainerStyle: styles.innerContainer,
+        refreshControl: (
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              fetchProducts(currentPage);
+            }}
+          />
+        ),
+      }}
+    >
+      <SearchBar />
+
+      {loading && !refreshing && <ActivityIndicator size="large" />}
+
+      {error ? (
+        <>
+          <Text style={styles.errorText}>{error}</Text>
+          <AppButton
+            title="Retry"
+            onPress={() => fetchProducts(currentPage)}
+            style={{ marginTop: 16 }}
+          />
+        </>
+      ) : products.length === 0 ? (
+        <>
+          <Text style={styles.emptyText}>No products found</Text>
+          <AppButton
+            title="Retry"
+            onPress={() => fetchProducts(currentPage)}
+            style={{ marginTop: 16 }}
+          />
+        </>
+      ) : (
+        <>
+          {products.map((product) => {
+            const fullImages = product.images.map((img) => ({
+              uri: `${IMAGE_BASE_URL}${img.url}`,
+            }));
+
+            return (
+              <ProductCard
+                key={product._id}
+                title={product.title}
+                price={product.price}
+                images={fullImages}
+                onPress={() =>
+                  navigation.navigate('ProductDetails', {
+                    productId: product._id,
+                  })
+                }
+              />
+            );
+          })}
+
+          {/* Pagination Controls */}
+          {renderPagination()}
+        </>
+      )}
     </ScreenWrapper>
   );
 }
 
 const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      padding: 16,
-      paddingBottom: 20,
+    innerContainer: {
+      padding: 28,
+      paddingBottom: 100,
+      flexGrow: 1,
+      minHeight: '100%',
       backgroundColor: isDarkMode ? '#1c1c1e' : '#f5f5f5',
+    },
+    errorText: {
+      color: 'red',
+      textAlign: 'center',
+      marginVertical: 10,
+    },
+    emptyText: {
+      textAlign: 'center',
+      fontSize: 16,
+      color: '#999',
+      marginTop: 20,
+    },
+    paginationContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: 24,
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    pageButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 4,
+      backgroundColor: '#ddd',
+      marginHorizontal: 4,
+    },
+    activePageButton: {
+      backgroundColor: '#007bff',
+    },
+    pageText: {
+      color: '#000',
+      fontWeight: 'bold',
     },
   });

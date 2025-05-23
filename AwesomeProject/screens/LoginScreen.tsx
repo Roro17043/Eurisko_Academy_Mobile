@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import {View, StyleSheet, TouchableOpacity} from 'react-native';
 import {useForm, Controller} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -13,6 +9,10 @@ import {useTheme} from '../context/ThemeContext';
 import AppButton from '../components/AppButton';
 import AppText from '../components/AppText';
 import AppTextInput from '../components/AppTextInput';
+import {useDispatch} from 'react-redux';
+import {AppDispatch} from '../RTKstore';
+import { setCredentials, setMyProducts } from '../RTKstore/slices/authSlice';
+import api from '../services/api';
 
 const loginSchema = z.object({
   email: z.union([
@@ -33,6 +33,8 @@ export default function LoginScreen() {
   const navigation = useNavigation<any>();
   const {isDarkMode} = useTheme();
   const styles = getStyles(isDarkMode);
+  const dispatch = useDispatch<AppDispatch>();
+
 
   const {
     control,
@@ -42,22 +44,59 @@ export default function LoginScreen() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'eurisko',
-      password: 'academy2025',
+      email: 'rouhanasalameh83@gmail.com',
+      password: '123456',
     },
   });
 
-  const onSubmit = (data: LoginFormData) => {
-    if (
-      (data.email === 'eurisko' || data.email === 'eurisko@example.com') &&
-      data.password === 'academy2025'
-    ) {
-      navigation.navigate('Verification');
-    } else {
-      setError('email', {message: 'Invalid email or username'});
-      setError('password', {message: 'Check your password'});
-    }
-  };
+  const onSubmit = async (data: LoginFormData) => {
+  try {
+    // Step 1: Login to get tokens
+    const loginRes = await api.post('/auth/login', data);
+    const { accessToken, refreshToken } = loginRes.data.data;
+
+    // Step 2: Get user profile using token
+    const profileRes = await api.get('/user/profile', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const user = profileRes.data.data.user;
+
+
+    // Step 5: Save tokens + user + myProducts in Redux
+    dispatch(
+      setCredentials({
+        accessToken,
+        refreshToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          profileImage: user.profileImage,
+        },
+      })
+    );
+
+    console.log('✅ Login successful, user + products saved');
+    // console.log('📦 All fetched products:', allProducts);
+
+    console.log('👤 Current user ID:', user.id);
+
+
+    // Navigate as usual (e.g., home/dashboard)
+    // navigation.navigate('TabViews'); // if needed
+
+  } catch (err: any) {
+    const message = err?.response?.data?.message || 'Login failed';
+    setError('email', { message: 'Invalid email or username' });
+    setError('password', { message: 'Check your password' });
+    console.error('❌ Login error:', message);
+  }
+};
+
+
 
   return (
     <ScreenWrapper>
@@ -103,12 +142,22 @@ export default function LoginScreen() {
         />
 
         <AppButton title="Login" onPress={handleSubmit(onSubmit)} />
+
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
           <AppText style={styles.signupText}>
             Don’t have an account?{' '}
             <AppText style={styles.signupLink}>Sign up</AppText>
           </AppText>
         </TouchableOpacity>
+
+        <AppButton
+          title="Go to Verification"
+          onPress={() =>
+            navigation.navigate('Verification', {
+              email: 'rouhanasalameh83@gmail.com',
+            })
+          }
+        />
       </View>
     </ScreenWrapper>
   );

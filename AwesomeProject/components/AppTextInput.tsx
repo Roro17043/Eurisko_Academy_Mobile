@@ -1,21 +1,30 @@
-// This is a React Native component that wraps the TextInput component
-// and applies a custom font style. It allows you to pass additional styles and props.
-
-
 import React from 'react';
-import { TextInput, TextInputProps, StyleSheet } from 'react-native';
+import {
+  TextInput,
+  TextInputProps,
+  StyleSheet,
+  View,
+  Text,
+} from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-const AppTextInput = (props: TextInputProps) => {
+type AppTextInputProps = TextInputProps & {
+  error?: string;
+};
+
+const AppTextInput = ({ error, style, ...rest }: AppTextInputProps) => {
   const { isDarkMode } = useTheme();
   const styles = isDarkMode ? darkStyles : lightStyles;
 
   return (
-    <TextInput
-      {...props}
-      style={[styles.input, props.style]}
-      placeholderTextColor={isDarkMode ? '#aaa' : '#666'}
-    />
+    <View style={{ marginBottom: 12 }}>
+      <TextInput
+        {...rest}
+        style={[styles.input, error && styles.inputError, style]}
+        placeholderTextColor={isDarkMode ? '#aaa' : '#666'}
+      />
+      {error && <Text style={styles.errorText}>{error}</Text>}
+    </View>
   );
 };
 
@@ -34,6 +43,14 @@ const lightStyles = StyleSheet.create({
     color: '#000',
     borderColor: '#ccc',
   },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 4,
+    fontSize: 13,
+  },
 });
 
 const darkStyles = StyleSheet.create({
@@ -42,6 +59,14 @@ const darkStyles = StyleSheet.create({
     backgroundColor: '#2a2a2d',
     color: '#f1f1f1',
     borderColor: '#444',
+  },
+  inputError: {
+    borderColor: 'red',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 4,
+    fontSize: 13,
   },
 });
 

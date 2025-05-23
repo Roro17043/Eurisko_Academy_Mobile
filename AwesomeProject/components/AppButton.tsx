@@ -1,5 +1,3 @@
-// components/AppButton.tsx
-// Similar to the original code, but with a custom button component and custom font
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 
@@ -8,12 +6,30 @@ type AppButtonProps = {
   onPress: () => void;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  disabled?: boolean;
 };
 
-const AppButton = ({ title, onPress, style, textStyle }: AppButtonProps) => {
+const AppButton = ({ title, onPress, style, textStyle, disabled = false }: AppButtonProps) => {
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.button, style]}>
-      <Text style={[styles.text, textStyle]}>{title}</Text>
+    <TouchableOpacity
+      onPress={onPress}
+      style={[
+        styles.button,
+        disabled && styles.disabledButton,
+        style,
+      ]}
+      activeOpacity={disabled ? 1 : 0.8}
+      disabled={disabled}
+    >
+      <Text
+        style={[
+          styles.text,
+          disabled && styles.disabledText,
+          textStyle,
+        ]}
+      >
+        {title}
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -27,9 +43,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontFamily: 'Montserrat-Regular', // Use your custom font name
+    fontFamily: 'Montserrat-Regular',
     color: '#fff',
     fontSize: 17,
+  },
+  disabledButton: {
+    backgroundColor: '#a0a0a0',
+  },
+  disabledText: {
+    color: '#e1e1e1',
   },
 });
 
