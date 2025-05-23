@@ -27,17 +27,17 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
   const [activeIndex, setActiveIndex] = useState(0);
   const isFocused = useIsFocused();
 
-  // useEffect(() => {
-  //   if (!images.length || !isFocused) return;
-  //   const interval = setInterval(() => {
-  //     setActiveIndex(prev => {
-  //       const nextIndex = (prev + 1) % images.length;
-  //       scrollRef.current?.scrollTo({ x: nextIndex * screenWidth, animated: true });
-  //       return nextIndex;
-  //     });
-  //   }, 4000); // Fixed 4s interval
-  //   return () => clearInterval(interval);
-  // }, [images.length, isFocused]);
+  useEffect(() => {
+    if (!images.length || !isFocused) return;
+    const interval = setInterval(() => {
+      setActiveIndex(prev => {
+        const nextIndex = (prev + 1) % images.length;
+        scrollRef.current?.scrollTo({ x: nextIndex * screenWidth, animated: true });
+        return nextIndex;
+      });
+    }, 4000); // Fixed 4s interval
+    return () => clearInterval(interval);
+  }, [images.length, isFocused]);
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.card}>

@@ -97,7 +97,6 @@ export default function EditProfileScreen() {
 
       navigation.goBack();
     } catch (err: any) {
-      console.error('Update failed:', err);
       Toast.show({
         type: 'error',
         text1: 'Failed to update',

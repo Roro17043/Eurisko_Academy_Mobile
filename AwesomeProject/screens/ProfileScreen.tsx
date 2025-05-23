@@ -1,29 +1,32 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   StyleSheet,
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  ToastAndroid,
 } from 'react-native';
 import AppText from '../components/AppText';
 import AppButton from '../components/AppButton';
 import ScreenWrapper from '../components/ScreenWrapper';
-import { useTheme } from '../context/ThemeContext';
+import {useTheme} from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useDispatch } from 'react-redux';
-import { logout } from '../RTKstore/slices/authSlice';
+import {useDispatch} from 'react-redux';
+import {logout} from '../RTKstore/slices/authSlice';
 import ThemeButton from '../components/ThemeButton';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/RootParamNavigation';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {RootStackParamList} from '../navigation/RootParamNavigation';
 import api from '../services/api';
+import Toast from 'react-native-toast-message';
 
 export default function ProfileScreen() {
-  const { isDarkMode } = useTheme();
+  const {isDarkMode} = useTheme();
   const styles = getStyles(isDarkMode);
   const dispatch = useDispatch();
-const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +36,7 @@ const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>(
       const response = await api.get('/user/profile');
       setUser(response.data.data.user);
     } catch (err) {
-      console.error('Failed to fetch profile:', err);
+      ToastAndroid.show('Failed to fetch profile', ToastAndroid.SHORT);
     } finally {
       setLoading(false);
     }
@@ -41,9 +44,9 @@ const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>(
 
   useFocusEffect(
     React.useCallback(() => {
-      setLoading(true);      // reset loading in case of refocus
+      setLoading(true); // reset loading in case of refocus
       fetchProfile();
-    }, [])
+    }, []),
   );
 
   const handleLogout = () => {
@@ -53,8 +56,15 @@ const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>(
   if (loading) {
     return (
       <ScreenWrapper>
-        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-          <ActivityIndicator size="large" color={isDarkMode ? '#fff' : '#000'} />
+        <View
+          style={[
+            styles.container,
+            {justifyContent: 'center', alignItems: 'center'},
+          ]}>
+          <ActivityIndicator
+            size="large"
+            color={isDarkMode ? '#fff' : '#000'}
+          />
         </View>
       </ScreenWrapper>
     );
@@ -67,36 +77,52 @@ const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>(
           <ThemeButton isDarkMode={isDarkMode} />
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => navigation.navigate('EditProfile', { user })}
-          >
+            onPress={() => navigation.navigate('EditProfile', {user})}>
             <Ionicons
               name="create-outline"
               size={18}
               color={isDarkMode ? '#fff' : '#000'}
-              style={{ marginRight: 4 }}
+              style={{marginRight: 4}}
             />
             <AppText style={styles.editText}>Edit</AppText>
           </TouchableOpacity>
         </View>
 
         {user?.profileImage?.url ? (
-  <Image
-    source={{ uri: user.profileImage.url }}
-    style={styles.avatar}
-  />
-) : (
-  <View style={styles.avatarPlaceholder}>
-    <Ionicons name="person-circle-outline" size={100} color={isDarkMode ? '#888' : '#ccc'} />
-  </View>
-)}
+          <Image source={{uri: user.profileImage.url}} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Ionicons
+              name="person-circle-outline"
+              size={100}
+              color={isDarkMode ? '#888' : '#ccc'}
+            />
+          </View>
+        )}
 
         <View style={styles.info}>
-          <ProfileField label="First Name" value={user?.firstName} isDarkMode={isDarkMode} />
-          <ProfileField label="Last Name" value={user?.lastName} isDarkMode={isDarkMode} />
-          <ProfileField label="Email" value={user?.email} isDarkMode={isDarkMode} />
+          <ProfileField
+            label="First Name"
+            value={user?.firstName}
+            isDarkMode={isDarkMode}
+          />
+          <ProfileField
+            label="Last Name"
+            value={user?.lastName}
+            isDarkMode={isDarkMode}
+          />
+          <ProfileField
+            label="Email"
+            value={user?.email}
+            isDarkMode={isDarkMode}
+          />
         </View>
 
-        <AppButton title="Logout" onPress={handleLogout} style={styles.logoutButton} />
+        <AppButton
+          title="Logout"
+          onPress={handleLogout}
+          style={styles.logoutButton}
+        />
       </View>
     </ScreenWrapper>
   );
@@ -172,14 +198,13 @@ const getStyles = (isDarkMode: boolean) =>
       width: '100%',
     },
     avatarPlaceholder: {
-  width: 100,
-  height: 100,
-  borderRadius: 50,
-  justifyContent: 'center',
-  alignItems: 'center',
-  alignSelf: 'center',
-  marginBottom: 30,
-  backgroundColor: isDarkMode ? '#2c2c2e' : '#e0e0e0',
-},
-
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
+      alignSelf: 'center',
+      marginBottom: 30,
+      backgroundColor: isDarkMode ? '#2c2c2e' : '#e0e0e0',
+    },
   });

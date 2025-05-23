@@ -15,7 +15,6 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
 
     return 'Unknown location';
   } catch (error) {
-    console.error('Google Reverse Geocoding error:', error);
     return 'Unknown location';
   }
 };

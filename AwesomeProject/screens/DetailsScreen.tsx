@@ -64,7 +64,6 @@ export default function ProductDetailsScreen() {
         throw new Error('Product not found');
       }
     } catch (err: any) {
-      console.error('Fetch product error:', err);
       setError(err.message || 'Failed to fetch product');
     } finally {
       setLoading(false);
@@ -112,7 +111,6 @@ export default function ProductDetailsScreen() {
         throw new Error('Failed to download image');
       }
     } catch (err) {
-      console.error('Save image error:', err);
       ToastAndroid.show('❌ Failed to save image', ToastAndroid.SHORT);
     }
   };

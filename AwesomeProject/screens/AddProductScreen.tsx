@@ -204,7 +204,6 @@ export default function AddProductScreen() {
       setImages([]);
       setSelectedLocation(null);
     } catch (error: any) {
-      console.log('Upload error:', error.response?.data || error.message);
       Toast.show({
         type: 'error',
         text1: 'Upload Failed',

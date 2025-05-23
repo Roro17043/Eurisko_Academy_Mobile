@@ -79,7 +79,6 @@ export default function EditProductScreen() {
   // Update location when returning from LocationPicker
   useEffect(() => {
     if (route.params?.location) {
-      console.log('📍 Updated location:', route.params.location);
       setSelectedLocation(route.params.location);
       setValue('location', route.params.location);
     }
@@ -99,7 +98,6 @@ export default function EditProductScreen() {
         longitude: selectedLocation.longitude,
       },
     };
-    console.log('🔍 route.params:', route.params);
 
 
     try {
@@ -113,7 +111,6 @@ export default function EditProductScreen() {
       navigation.goBack();
     } catch (err) {
       Alert.alert('Error', 'Update failed');
-      console.error('Update error:', err);
     }
   };
 
