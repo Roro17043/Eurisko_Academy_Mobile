@@ -251,7 +251,7 @@ const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
     innerContainer: {
       padding: 28,
-      paddingBottom: 100,
+      paddingBottom: 20,
       backgroundColor: isDarkMode ? '#1c1c1e' : '#f5f5f5',
     },
     errorText: {
@@ -281,10 +281,11 @@ const getStyles = (isDarkMode: boolean) =>
       fontSize: 14,
       paddingVertical: 6,
       paddingHorizontal: 10,
+      borderColor: isDarkMode ? '#555' : '#ccc',
       borderWidth: 1,
-      borderColor: '#ccc',
       borderRadius: 6,
-      backgroundColor: '#fff',
+       backgroundColor: isDarkMode ? '#2c2c2e' : '#fff',
+      color: isDarkMode ? '#fff' : '#000'
     },
     paginationContainer: {
       flexDirection: 'row',
