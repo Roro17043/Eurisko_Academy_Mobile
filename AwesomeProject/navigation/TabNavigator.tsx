@@ -1,11 +1,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import { useTheme } from '../context/ThemeContext';
 import ProductScreen from '../screens/ProductsScreen';
-import AddProductScreen from '../screens/dummyscreens/AddProductScreen';
+import AddProductScreen from '../screens/AddProductScreen';
 import MyProductsScreen from '../screens/MyProductsScreen';
-import ProfileScreen from '../screens/dummyscreens/ProfileScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import DummyScreen from '../screens/dummyscreens/DummyScreen';
 
 const Tab = createBottomTabNavigator();
@@ -37,14 +37,20 @@ function getTabBarIcon(routeName: string, focused: boolean, color: string, size:
 }
 
 export default function TabNavigator() {
+  const { isDarkMode } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) =>
           getTabBarIcon(route.name, focused, color, size),
-        tabBarActiveTintColor: '#007aff',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: isDarkMode ? '#fff' : '#007aff',
+        tabBarInactiveTintColor: isDarkMode ? '#888' : 'gray',
+        tabBarStyle: {
+          backgroundColor: isDarkMode ? '#1c1c1e' : '#fff',
+          borderTopColor: isDarkMode ? '#333' : '#ccc',
+        },
         tabBarShowLabel: false,
       })}
     >

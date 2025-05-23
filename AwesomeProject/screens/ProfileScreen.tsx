@@ -6,18 +6,18 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import AppText from '../../components/AppText';
-import AppButton from '../../components/AppButton';
-import ScreenWrapper from '../../components/ScreenWrapper';
-import { useTheme } from '../../context/ThemeContext';
+import AppText from '../components/AppText';
+import AppButton from '../components/AppButton';
+import ScreenWrapper from '../components/ScreenWrapper';
+import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useDispatch } from 'react-redux';
-import { logout } from '../../RTKstore/slices/authSlice';
-import ThemeButton from '../../components/ThemeButton';
+import { logout } from '../RTKstore/slices/authSlice';
+import ThemeButton from '../components/ThemeButton';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../navigation/RootParamNavigation';
-import api from '../../services/api';
+import type { RootStackParamList } from '../navigation/RootParamNavigation';
+import api from '../services/api';
 
 export default function ProfileScreen() {
   const { isDarkMode } = useTheme();

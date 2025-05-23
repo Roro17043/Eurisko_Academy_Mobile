@@ -26,7 +26,7 @@ import api from '../services/api';
 import { RootStackParamList } from '../navigation/RootParamNavigation';
 import RNFS from 'react-native-fs';
 import MapView, { Marker } from 'react-native-maps';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { reverseGeocode } from '../services/geocoding';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 type ProductDetailsRouteProp = RouteProp<RootStackParamList, 'ProductDetails'>;
@@ -34,11 +34,11 @@ type ProductDetailsRouteProp = RouteProp<RootStackParamList, 'ProductDetails'>;
 export default function ProductDetailsScreen() {
   const route = useRoute<ProductDetailsRouteProp>();
   const { productId } = route.params;
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width, height } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const themeStyles = getStyles(isDarkMode);
 
+  const [resolvedLocationName, setResolvedLocationName] = useState<string | null>(null);
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +47,12 @@ export default function ProductDetailsScreen() {
   useEffect(() => {
     fetchProduct();
   }, []);
+
+  useEffect(() => {
+    if (product?.location?.latitude && product?.location?.longitude) {
+      reverseGeocode(product.location.latitude, product.location.longitude).then(setResolvedLocationName);
+    }
+  }, [product?.location]);
 
   const fetchProduct = async () => {
     try {
@@ -121,7 +127,11 @@ export default function ProductDetailsScreen() {
   }
 
   return (
-    <ScreenWrapper backgroundColor={isDarkMode ? '#000' : '#f9f9f9'} barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent>
+    <ScreenWrapper
+      backgroundColor={isDarkMode ? '#000' : '#f9f9f9'}
+      barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+      translucent
+    >
       <ScrollView contentContainerStyle={themeStyles.container} nestedScrollEnabled>
         <FlatList
           data={product.images}
@@ -138,31 +148,35 @@ export default function ProductDetailsScreen() {
           )}
         />
 
-        <View style={styles.dotContainer}>
+        <View style={themeStyles.dotContainer}>
           {product.images.map((_, index) => (
-            <View key={index} style={[styles.dot, currentImageIndex === index && styles.activeDot]} />
+            <View
+              key={index}
+              style={[themeStyles.dot, currentImageIndex === index && themeStyles.activeDot]}
+            />
           ))}
         </View>
 
-        <View style={styles.body}>
+        <View style={themeStyles.body}>
           <AppText style={themeStyles.title}>{product.title}</AppText>
-          <AppText style={styles.price}>{`$${product.price}`}</AppText>
+          <AppText style={themeStyles.price}>{`$${product.price}`}</AppText>
           <AppText style={themeStyles.description}>{product.description}</AppText>
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity style={[styles.button, styles.shareButton]}>
-              <AppText style={styles.buttonText}>Share</AppText>
+          <View style={themeStyles.buttonRow}>
+            <TouchableOpacity style={[themeStyles.button, themeStyles.shareButton]}>
+              <AppText style={themeStyles.buttonText}>Share</AppText>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.cartButton]}>
-              <AppText style={styles.buttonText}>Add to Cart</AppText>
+            <TouchableOpacity style={[themeStyles.button, themeStyles.cartButton]}>
+              <AppText style={themeStyles.buttonText}>Add to Cart</AppText>
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={{ marginHorizontal: 16, marginTop: 16 }}>
-          {product.location?.name && (
-            <AppText style={{ marginBottom: 6, fontWeight: '600' }}>📍 {product.location.name}</AppText>
+          {resolvedLocationName && (
+            <AppText style={themeStyles.locationText}>📍 {resolvedLocationName}</AppText>
           )}
+
           {product.user?.email && (
             <TouchableOpacity onPress={() => Linking.openURL(`mailto:${product.user.email}`)}>
               <AppText style={{ color: '#007bff', textDecorationLine: 'underline' }}>
@@ -173,7 +187,7 @@ export default function ProductDetailsScreen() {
         </View>
 
         {product.location && (
-          <TouchableOpacity onPress={() => navigation.navigate('LocationViewer', { location: product.location })}>
+          <TouchableOpacity>
             <MapView
               style={{ height: 200, width: '100%', borderRadius: 12, marginTop: 16 }}
               region={{
@@ -210,55 +224,57 @@ const getStyles = (isDarkMode: boolean) =>
       marginBottom: 24,
       color: isDarkMode ? '#ccc' : '#444',
     },
+    locationText: {
+      marginBottom: 6,
+      fontWeight: '600',
+      color: isDarkMode ? '#fff' : '#222',
+    },
+    dotContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: 8,
+      marginBottom: 16,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: '#ccc',
+      marginHorizontal: 4,
+    },
+    activeDot: {
+      backgroundColor: '#007bff',
+    },
+    body: {
+      flex: 1,
+      padding: PixelRatio.get() >= 3 ? 20 : 16,
+    },
+    price: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#28a745',
+      marginBottom: 12,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 10,
+    },
+    button: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+    shareButton: {
+      backgroundColor: '#007bff',
+    },
+    cartButton: {
+      backgroundColor: '#28a745',
+    },
+    buttonText: {
+      color: '#fff',
+      fontWeight: '600',
+      fontSize: 15,
+    },
   });
-
-const styles = StyleSheet.create({
-  dotContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#ccc',
-    marginHorizontal: 4,
-  },
-  activeDot: {
-    backgroundColor: '#007bff',
-  },
-  body: {
-    flex: 1,
-    padding: PixelRatio.get() >= 3 ? 20 : 16,
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#28a745',
-    marginBottom: 12,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  shareButton: {
-    backgroundColor: '#007bff',
-  },
-  cartButton: {
-    backgroundColor: '#28a745',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-});

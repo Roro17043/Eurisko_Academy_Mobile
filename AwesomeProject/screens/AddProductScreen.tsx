@@ -16,16 +16,16 @@ import {useForm, Controller} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
 import Toast from 'react-native-toast-message';
-import api from '../../services/api';
-import {useTheme} from '../../context/ThemeContext';
+import api from '../services/api';
+import {useTheme} from '../context/ThemeContext';
 import {useSelector} from 'react-redux';
-import {RootState} from '../../RTKstore';
+import {RootState} from '../RTKstore';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RouteProp} from '@react-navigation/native';
-import {RootStackParamList} from '../../navigation/RootParamNavigation';
+import {RootStackParamList} from '../navigation/RootParamNavigation';
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),

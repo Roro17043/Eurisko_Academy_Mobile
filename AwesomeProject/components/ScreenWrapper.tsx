@@ -12,6 +12,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../context/ThemeContext'; // 👈 Import theme context
 
 type ScreenWrapperProps = {
   children: React.ReactNode;
@@ -21,53 +22,56 @@ type ScreenWrapperProps = {
   barStyle?: 'dark-content' | 'light-content';
   scrollViewProps?: ScrollViewProps;
   keyboardVerticalOffset?: number;
-  disableScrollWrap?: boolean; // 👈 NEW
+  disableScrollWrap?: boolean;
 };
 
 export default function ScreenWrapper({
   children,
   scroll = false,
-  backgroundColor = '#fff',
+  backgroundColor,
   translucent = false,
-  barStyle = 'dark-content',
+  barStyle,
   scrollViewProps = {},
   keyboardVerticalOffset = -80,
-  disableScrollWrap = false, // 👈 DEFAULT false
+  disableScrollWrap = false,
 }: ScreenWrapperProps) {
+  const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
+  const bgColor = backgroundColor ?? (isDarkMode ? '#1c1c1e' : '#fff');
+  const statusBarStyle = barStyle ?? (isDarkMode ? 'light-content' : 'dark-content');
   const paddingTop = translucent ? insets.top : 0;
-  const dynamicStyles = getDynamicStyles(backgroundColor, paddingTop);
+  const dynamicStyles = getDynamicStyles(bgColor, paddingTop);
 
   const Wrapper = scroll && !disableScrollWrap ? ScrollView : View;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
       <StatusBar
-        barStyle={barStyle}
+        barStyle={statusBarStyle}
         translucent={translucent}
-        backgroundColor={translucent ? 'transparent' : backgroundColor}
+        backgroundColor={translucent ? 'transparent' : bgColor}
       />
 
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={keyboardVerticalOffset}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <Wrapper
-            style={dynamicStyles.wrapper}
-            {...(scroll && !disableScrollWrap
-              ? {
-                  contentContainerStyle: dynamicStyles.scrollContainer,
-                  keyboardShouldPersistTaps: 'handled',
-                  ...scrollViewProps,
-                }
-              : {})}
-          >
-            {children}
-          </Wrapper>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+      {scroll && !disableScrollWrap ? (
+        <Wrapper
+          style={dynamicStyles.wrapper}
+          contentContainerStyle={dynamicStyles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          {...scrollViewProps}
+        >
+          {children}
+        </Wrapper>
+      ) : (
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={keyboardVerticalOffset}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <Wrapper style={dynamicStyles.wrapper}>{children}</Wrapper>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 }

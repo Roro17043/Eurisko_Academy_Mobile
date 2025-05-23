@@ -16,7 +16,7 @@ import ProductDetailsScreen from '../screens/DetailsScreen';
 import TabNavigator from './TabNavigator';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import EditProductScreen from '../screens/EditProductScreen';
-import AddProductScreen from '../screens/dummyscreens/AddProductScreen';
+import AddProductScreen from '../screens/AddProductScreen';
 import LocationPickerScreen from '../screens/LocationPickerScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
