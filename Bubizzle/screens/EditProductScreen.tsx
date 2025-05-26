@@ -8,8 +8,8 @@ import {useSelector} from 'react-redux';
 import {RootState} from '../RTKstore';
 import AppTextInput from '../components/AppTextInput';
 import AppButton from '../components/AppButton';
-import ScreenWrapper from '../components/ScreenWrapper';
 import api from '../services/api';
+import FormScreenWrapper from '../components/FormScreenWrapper';
 
 const schema = z.object({
   title: z.string().min(1),
@@ -47,7 +47,6 @@ export default function EditProductScreen() {
     resolver: zodResolver(schema),
   });
 
-  // Fetch product on load
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -76,7 +75,6 @@ export default function EditProductScreen() {
     fetchProduct();
   }, [productId, reset, accessToken]);
 
-  // Update location when returning from LocationPicker
   useEffect(() => {
     if (route.params?.location) {
       setSelectedLocation(route.params.location);
@@ -99,7 +97,6 @@ export default function EditProductScreen() {
       },
     };
 
-
     try {
       await api.put(`/products/${productId}`, updatedData, {
         headers: {
@@ -115,11 +112,11 @@ export default function EditProductScreen() {
   };
 
   if (loading || !initialData) {
-    return <ActivityIndicator style={{flex: 1}} size="large" />;
+    return <ActivityIndicator style={styles.loading} size="large" />;
   }
 
   return (
-    <ScreenWrapper>
+    <FormScreenWrapper>
       <View style={styles.container}>
         <Controller
           control={control}
@@ -168,7 +165,7 @@ export default function EditProductScreen() {
           )}
         />
         {errors.locationName && (
-          <Text style={{color: 'red'}}>{errors.locationName.message}</Text>
+          <Text style={styles.errorText}>{errors.locationName.message}</Text>
         )}
 
         <AppButton
@@ -182,25 +179,34 @@ export default function EditProductScreen() {
         />
 
         {selectedLocation && (
-          <Text style={{marginVertical: 10}}>
-            📍 {selectedLocation.latitude.toFixed(5)},{' '}
-            {selectedLocation.longitude.toFixed(5)}
+          <Text style={styles.coords}>
+            📍 {selectedLocation.latitude.toFixed(5)}, {selectedLocation.longitude.toFixed(5)}
           </Text>
         )}
 
-        {errors.locationName &&
-          typeof errors.locationName.message === 'string' && (
-            <Text style={{color: 'red'}}>{errors.locationName.message}</Text>
-          )}
-
         <AppButton title="Save Changes" onPress={handleSubmit(onSubmit)} />
       </View>
-    </ScreenWrapper>
+    </FormScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     padding: 20,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  coords: {
+    marginVertical: 10,
+    fontSize: 14,
+    color: '#555',
   },
 });

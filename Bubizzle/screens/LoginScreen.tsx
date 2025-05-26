@@ -3,7 +3,6 @@ import {View, StyleSheet, TouchableOpacity} from 'react-native';
 import {useForm, Controller} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
-import ScreenWrapper from '../components/ScreenWrapper';
 import {useNavigation} from '@react-navigation/native';
 import {useTheme} from '../context/ThemeContext';
 import AppButton from '../components/AppButton';
@@ -16,6 +15,7 @@ import api from '../services/api';
 import {useThemedToast} from '../services/ShowToast';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useState} from 'react';
+import FormScreenWrapper from '../components/FormScreenWrapper';
 
 const loginSchema = z.object({
   email: z.union([
@@ -107,7 +107,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScreenWrapper>
+    <FormScreenWrapper>
       <View style={styles.container}>
         <AppText style={styles.title}>Login</AppText>
 
@@ -169,7 +169,7 @@ export default function LoginScreen() {
           </AppText>
         </TouchableOpacity>
       </View>
-    </ScreenWrapper>
+    </FormScreenWrapper>
   );
 }
 

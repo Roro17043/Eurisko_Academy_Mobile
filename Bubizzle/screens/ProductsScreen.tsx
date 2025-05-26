@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import ProductCard from '../components/ProductCard';
 import { useNavigation } from '@react-navigation/native';
-import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import SearchBar from '../components/SearchBar';
 import { useSelector } from 'react-redux';
@@ -18,6 +17,7 @@ import { RootState } from '../RTKstore';
 import api from '../services/api';
 import AppButton from '../components/AppButton';
 import AppTextInput from '../components/AppTextInput';
+import ListScreenWrapper from '../components/ListScreenWrapper';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
@@ -46,7 +46,7 @@ export default function ProductScreen() {
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchProducts = async (page = 1) => {
-    if (!refreshing) setLoading(true);
+    if (!refreshing) {setLoading(true);}
     setError(null);
 
     try {
@@ -97,8 +97,8 @@ export default function ProductScreen() {
       const maxVal = max ? Number(max) : null;
 
       filtered = filtered.filter((item: Product) => {
-        if (minVal !== null && item.price < minVal) return false;
-        if (maxVal !== null && item.price > maxVal) return false;
+        if (minVal !== null && item.price < minVal) {return false;}
+        if (maxVal !== null && item.price > maxVal) {return false;}
         return true;
       });
 
@@ -124,12 +124,12 @@ export default function ProductScreen() {
   }, []);
 
   const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages) return;
+    if (page < 1 || page > totalPages) {return;}
     fetchProducts(page);
   };
 
   const renderPagination = () => {
-    if (searchQuery || minPrice || maxPrice) return null;
+    if (searchQuery || minPrice || maxPrice) {return null;}
 
     const pageButtons = [];
     for (let i = 1; i <= totalPages; i++) {
@@ -168,7 +168,7 @@ export default function ProductScreen() {
   };
 
   return (
-    <ScreenWrapper scroll={false} disableScrollWrap>
+     <ListScreenWrapper>
       <FlatList
         data={products}
         keyExtractor={(item) => item._id}
@@ -243,14 +243,14 @@ export default function ProductScreen() {
         windowSize={5}
         removeClippedSubviews={true}
       />
-    </ScreenWrapper>
+    </ListScreenWrapper>
   );
 }
 
 const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
     innerContainer: {
-      padding: 28,
+      paddingHorizontal: 28,
       paddingBottom: 20,
       backgroundColor: isDarkMode ? '#1c1c1e' : '#f5f5f5',
     },
@@ -285,7 +285,7 @@ const getStyles = (isDarkMode: boolean) =>
       borderWidth: 1,
       borderRadius: 6,
        backgroundColor: isDarkMode ? '#2c2c2e' : '#fff',
-      color: isDarkMode ? '#fff' : '#000'
+      color: isDarkMode ? '#fff' : '#000',
     },
     paginationContainer: {
       flexDirection: 'row',

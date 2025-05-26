@@ -12,11 +12,11 @@ import {
 import {useSelector} from 'react-redux';
 import {RootState} from '../RTKstore';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import ScreenWrapper from '../components/ScreenWrapper';
 import AppText from '../components/AppText';
 import {useTheme} from '../context/ThemeContext';
 import api from '../services/api';
 import { useThemedToast } from '../services/ShowToast';
+import ListScreenWrapper from '../components/ListScreenWrapper';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
@@ -57,7 +57,6 @@ export default function MyProductsScreen() {
 
       setMyProducts(filtered);
     } catch (err: any) {
-
       showErrorToast('Could not load product details.');
     } finally {
       setLoading(false);
@@ -107,60 +106,55 @@ export default function MyProductsScreen() {
   );
 
   return (
-    <ScreenWrapper scroll={false}>
-      <View style={styles.container}>
-        {loading ? (
-          <ActivityIndicator size="large" style={styles.loadingcontainer} />
-        ) : myProducts.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.empty}>No products added yet.</Text>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={fetchMyProducts}>
-              <Text style={styles.retryText}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={myProducts}
-            keyExtractor={item => item._id}
-            renderItem={({item}) => (
-              <View style={styles.card}>
-                <Image
-                  source={{uri: `${IMAGE_BASE_URL}${item.images[0]?.url}`}}
-                  style={styles.image}
-                />
-                <View style={styles.info}>
-                  <AppText style={styles.title}>{item.title}</AppText>
-                  <AppText style={styles.price}>${item.price}</AppText>
-                  <AppText style={styles.location}>
-                    📍 Dummy Location: {item.location?.latitude ?? 33.89}°,{' '}
-                    {item.location?.longitude ?? 35.5}°
-                  </AppText>
-
-                  <View style={styles.actions}>
-                    <TouchableOpacity
-                      style={styles.edit}
-                      onPress={() =>
-                        navigation.navigate('EditProduct', {
-                          productId: item._id,
-                        })
-                      }>
-                      <AppText style={styles.btnText}>Edit</AppText>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.delete}
-                      onPress={() => deleteProduct(item._id)}>
-                      <AppText style={styles.btnText}>Delete</AppText>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            )}
+    <ListScreenWrapper>
+  {loading ? (
+    <ActivityIndicator size="large" style={styles.loadingcontainer} />
+  ) : myProducts.length === 0 ? (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.empty}>No products added yet.</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={fetchMyProducts}>
+        <Text style={styles.retryText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  ) : (
+    <FlatList
+      data={myProducts}
+      keyExtractor={item => item._id}
+      renderItem={({ item }) => (
+        <View style={styles.card}>
+          <Image
+            source={{ uri: `${IMAGE_BASE_URL}${item.images[0]?.url}` }}
+            style={styles.image}
           />
-        )}
-      </View>
-    </ScreenWrapper>
+          <View style={styles.info}>
+            <AppText style={styles.title}>{item.title}</AppText>
+            <AppText style={styles.price}>${item.price}</AppText>
+            <AppText style={styles.location}>
+              📍 Dummy Location: {item.location?.latitude ?? 33.89}°,{' '}
+              {item.location?.longitude ?? 35.5}°
+            </AppText>
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={styles.edit}
+                onPress={() =>
+                  navigation.navigate('EditProduct', { productId: item._id })
+                }>
+                <AppText style={styles.btnText}>Edit</AppText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.delete}
+                onPress={() => deleteProduct(item._id)}>
+                <AppText style={styles.btnText}>Delete</AppText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+      contentContainerStyle={styles.listContent}
+    />
+  )}
+</ListScreenWrapper>
+
   );
 }
 
@@ -249,4 +243,9 @@ const getStyles = (isDarkMode: boolean) =>
       color: '#fff',
       fontWeight: '600',
     },
+    listContent: {
+  padding: 20,
+  paddingTop: 12, // enough to clear under status bar (SafeAreaView helps too)
+},
+
   });

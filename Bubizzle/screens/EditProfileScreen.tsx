@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  ScrollView,
   Platform,
   PermissionsAndroid,
 } from 'react-native';
@@ -17,13 +16,14 @@ import Toast from 'react-native-toast-message';
 import api from '../services/api';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import FormScreenWrapper from '../components/FormScreenWrapper';
 
 export default function EditProfileScreen() {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const navigation = useNavigation();
   const route = useRoute();
-  const { user }: any = route.params;
+  const { user, onUpdated }: any = route.params; // include onUpdated callback
 
   const [firstName, setFirstName] = useState(user.firstName || '');
   const [lastName, setLastName] = useState(user.lastName || '');
@@ -56,7 +56,7 @@ export default function EditProfileScreen() {
 
   const takePhoto = async () => {
     const hasPermission = await requestCameraPermission();
-    if (!hasPermission) return;
+    if (!hasPermission) {return;}
 
     const result = await launchCamera({ mediaType: 'photo', saveToPhotos: true });
     if (result.assets && result.assets.length > 0) {
@@ -95,6 +95,10 @@ export default function EditProfileScreen() {
         text1: 'Profile updated successfully',
       });
 
+      if (typeof onUpdated === 'function') {
+        onUpdated(); // Notify ProfileScreen to refetch
+      }
+
       navigation.goBack();
     } catch (err: any) {
       Toast.show({
@@ -108,7 +112,7 @@ export default function EditProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <FormScreenWrapper>
       <View style={styles.imageContainer}>
         {profileImage?.uri ? (
           <Image source={{ uri: profileImage.uri }} style={styles.image} />
@@ -148,7 +152,7 @@ export default function EditProfileScreen() {
         onPress={handleSave}
         disabled={loading}
       />
-    </ScrollView>
+    </FormScreenWrapper>
   );
 }
 

@@ -1,95 +1,91 @@
-import React, {useState} from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
   ToastAndroid,
 } from 'react-native';
 import AppText from '../components/AppText';
 import AppButton from '../components/AppButton';
-import ScreenWrapper from '../components/ScreenWrapper';
-import {useTheme} from '../context/ThemeContext';
+import ListScreenWrapper from '../components/ListScreenWrapper';
+import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {useDispatch} from 'react-redux';
-import {logout} from '../RTKstore/slices/authSlice';
+import { useDispatch } from 'react-redux';
+import { logout } from '../RTKstore/slices/authSlice';
 import ThemeButton from '../components/ThemeButton';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import type {RootStackParamList} from '../navigation/RootParamNavigation';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/RootParamNavigation';
 import api from '../services/api';
-import Toast from 'react-native-toast-message';
 
 export default function ProfileScreen() {
-  const {isDarkMode} = useTheme();
+  const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const dispatch = useDispatch();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async () => {
+  // Track if profile needs re-fetching
+  const shouldRefetchRef = useRef(true);
+
+  const fetchProfile = useCallback(async () => {
+    setLoading(true);
     try {
       const response = await api.get('/user/profile');
       setUser(response.data.data.user);
+      shouldRefetchRef.current = false; // mark as up-to-date
     } catch (err) {
       ToastAndroid.show('Failed to fetch profile', ToastAndroid.SHORT);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useFocusEffect(
-    React.useCallback(() => {
-      setLoading(true); // reset loading in case of refocus
-      fetchProfile();
-    }, []),
+    useCallback(() => {
+      if (shouldRefetchRef.current) {
+        fetchProfile();
+      }
+    }, [fetchProfile])
   );
 
   const handleLogout = () => {
     dispatch(logout());
   };
 
-  if (loading) {
-    return (
-      <ScreenWrapper>
-        <View
-          style={[
-            styles.container,
-            {justifyContent: 'center', alignItems: 'center'},
-          ]}>
-          <ActivityIndicator
-            size="large"
-            color={isDarkMode ? '#fff' : '#000'}
-          />
-        </View>
-      </ScreenWrapper>
-    );
-  }
+  
 
   return (
-    <ScreenWrapper>
+    <ListScreenWrapper>
       <View style={styles.container}>
         <View style={styles.header}>
           <ThemeButton isDarkMode={isDarkMode} />
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => navigation.navigate('EditProfile', {user})}>
+            onPress={() =>
+              navigation.navigate('EditProfile', {
+                user,
+                onUpdated: () => {
+                  shouldRefetchRef.current = true; // mark to re-fetch on return
+                },
+              })
+            }
+          >
             <Ionicons
               name="create-outline"
               size={18}
               color={isDarkMode ? '#fff' : '#000'}
-              style={{marginRight: 4}}
+              style={{ marginRight: 4 }}
             />
             <AppText style={styles.editText}>Edit</AppText>
           </TouchableOpacity>
         </View>
 
         {user?.profileImage?.url ? (
-          <Image source={{uri: user.profileImage.url}} style={styles.avatar} />
+          <Image source={{ uri: user.profileImage.url }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarPlaceholder}>
             <Ionicons
@@ -101,30 +97,14 @@ export default function ProfileScreen() {
         )}
 
         <View style={styles.info}>
-          <ProfileField
-            label="First Name"
-            value={user?.firstName}
-            isDarkMode={isDarkMode}
-          />
-          <ProfileField
-            label="Last Name"
-            value={user?.lastName}
-            isDarkMode={isDarkMode}
-          />
-          <ProfileField
-            label="Email"
-            value={user?.email}
-            isDarkMode={isDarkMode}
-          />
+          <ProfileField label="First Name" value={user?.firstName} isDarkMode={isDarkMode} />
+          <ProfileField label="Last Name" value={user?.lastName} isDarkMode={isDarkMode} />
+          <ProfileField label="Email" value={user?.email} isDarkMode={isDarkMode} />
         </View>
 
-        <AppButton
-          title="Logout"
-          onPress={handleLogout}
-          style={styles.logoutButton}
-        />
+        <AppButton title="Logout" onPress={handleLogout} style={styles.logoutButton} />
       </View>
-    </ScreenWrapper>
+    </ListScreenWrapper>
   );
 }
 
@@ -150,7 +130,7 @@ const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: 20,
+      paddingHorizontal: 20,
       backgroundColor: isDarkMode ? '#1c1c1e' : '#fff',
     },
     header: {

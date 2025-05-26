@@ -17,9 +17,8 @@ import {
   ToastAndroid,
   Linking,
 } from 'react-native';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useRoute, RouteProp } from '@react-navigation/native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
-import ScreenWrapper from '../components/ScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/AppText';
 import api from '../services/api';
@@ -27,6 +26,7 @@ import { RootStackParamList } from '../navigation/RootParamNavigation';
 import RNFS from 'react-native-fs';
 import MapView, { Marker } from 'react-native-maps';
 import { reverseGeocode } from '../services/geocoding';
+import ListScreenWrapper from '../components/ListScreenWrapper';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 type ProductDetailsRouteProp = RouteProp<RootStackParamList, 'ProductDetails'>;
@@ -34,7 +34,7 @@ type ProductDetailsRouteProp = RouteProp<RootStackParamList, 'ProductDetails'>;
 export default function ProductDetailsScreen() {
   const route = useRoute<ProductDetailsRouteProp>();
   const { productId } = route.params;
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const themeStyles = getStyles(isDarkMode);
 
@@ -58,8 +58,7 @@ export default function ProductDetailsScreen() {
     try {
       const res = await api.get(`/products/${productId}`);
       if (res.data.success) {
-        const productData = res.data.data;
-        setProduct(productData);
+        setProduct(res.data.data);
       } else {
         throw new Error('Product not found');
       }
@@ -115,21 +114,19 @@ export default function ProductDetailsScreen() {
     }
   };
 
-  if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" />;
+  if (loading) {
+    return <ActivityIndicator style={themeStyles.loadingContainer} size="large" />;
+  }
   if (error || !product) {
     return (
-      <ScreenWrapper>
-        <Text style={{ color: 'red', textAlign: 'center', marginTop: 20 }}>{error}</Text>
-      </ScreenWrapper>
+      <ListScreenWrapper>
+        <Text style={themeStyles.errorText}>{error}</Text>
+      </ListScreenWrapper>
     );
   }
 
   return (
-    <ScreenWrapper
-      backgroundColor={isDarkMode ? '#000' : '#f9f9f9'}
-      barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-      translucent
-    >
+    <ListScreenWrapper>
       <ScrollView contentContainerStyle={themeStyles.container} nestedScrollEnabled>
         <FlatList
           data={product.images}
@@ -140,8 +137,14 @@ export default function ProductDetailsScreen() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
           renderItem={({ item }) => (
-            <TouchableOpacity activeOpacity={0.9} onLongPress={() => handleImageSave(`${IMAGE_BASE_URL}${item.url}`)}>
-              <Image source={{ uri: `${IMAGE_BASE_URL}${item.url}` }} style={{ width, height: 300, resizeMode: 'cover' }} />
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onLongPress={() => handleImageSave(`${IMAGE_BASE_URL}${item.url}`)}
+            >
+              <Image
+                source={{ uri: `${IMAGE_BASE_URL}${item.url}` }}
+                style={[themeStyles.image, { width }]}
+              />
             </TouchableOpacity>
           )}
         />
@@ -170,16 +173,14 @@ export default function ProductDetailsScreen() {
           </View>
         </View>
 
-        <View style={{ marginHorizontal: 16, marginTop: 16 }}>
+        <View style={themeStyles.footerSection}>
           {resolvedLocationName && (
             <AppText style={themeStyles.locationText}>📍 {resolvedLocationName}</AppText>
           )}
 
           {product.user?.email && (
             <TouchableOpacity onPress={() => Linking.openURL(`mailto:${product.user.email}`)}>
-              <AppText style={{ color: '#007bff', textDecorationLine: 'underline' }}>
-                ✉️ {product.user.email}
-              </AppText>
+              <AppText style={themeStyles.emailLink}>✉️ {product.user.email}</AppText>
             </TouchableOpacity>
           )}
         </View>
@@ -187,7 +188,7 @@ export default function ProductDetailsScreen() {
         {product.location && (
           <TouchableOpacity>
             <MapView
-              style={{ height: 200, width: '100%', borderRadius: 12, marginTop: 16 }}
+              style={themeStyles.map}
               region={{
                 latitude: product.location.latitude,
                 longitude: product.location.longitude,
@@ -200,7 +201,7 @@ export default function ProductDetailsScreen() {
           </TouchableOpacity>
         )}
       </ScrollView>
-    </ScreenWrapper>
+    </ListScreenWrapper>
   );
 }
 
@@ -226,6 +227,16 @@ const getStyles = (isDarkMode: boolean) =>
       marginBottom: 6,
       fontWeight: '600',
       color: isDarkMode ? '#fff' : '#222',
+    },
+    emailLink: {
+      color: '#007bff',
+      textDecorationLine: 'underline',
+    },
+    map: {
+      height: 200,
+      width: '100%',
+      borderRadius: 12,
+      marginTop: 16,
     },
     dotContainer: {
       flexDirection: 'row',
@@ -274,5 +285,23 @@ const getStyles = (isDarkMode: boolean) =>
       color: '#fff',
       fontWeight: '600',
       fontSize: 15,
+    },
+    image: {
+      height: 300,
+      resizeMode: 'cover',
+    },
+    footerSection: {
+      marginHorizontal: 16,
+      marginTop: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorText: {
+      color: 'red',
+      textAlign: 'center',
+      marginTop: 20,
     },
   });

@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTheme } from '../context/ThemeContext';
-import ScreenWrapper from '../components/ScreenWrapper';
+import FormScreenWrapper from '../components/FormScreenWrapper';
 import AppText from '../components/AppText';
 import AppTextInput from '../components/AppTextInput';
 import AppButton from '../components/AppButton';
@@ -34,7 +34,7 @@ export default function VerificationScreen() {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: {errors},
   } = useForm<VerificationFormData>({
     resolver: zodResolver(verificationSchema),
     defaultValues: {
@@ -113,7 +113,7 @@ export default function VerificationScreen() {
   };
 
   return (
-    <ScreenWrapper>
+    <FormScreenWrapper>
       <View style={styles.container}>
         <AppText style={styles.title}>Enter OTP Code</AppText>
 
@@ -146,7 +146,7 @@ export default function VerificationScreen() {
           style={styles.resendButton}
         />
       </View>
-    </ScreenWrapper>
+    </FormScreenWrapper>
   );
 }
 

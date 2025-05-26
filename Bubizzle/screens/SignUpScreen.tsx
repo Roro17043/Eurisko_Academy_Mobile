@@ -2,7 +2,6 @@ import React from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
   Alert,
   Text,
 } from 'react-native';
@@ -11,7 +10,7 @@ import {useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useNavigation} from '@react-navigation/native';
-import ScreenWrapper from '../components/ScreenWrapper';
+import FormScreenWrapper from '../components/FormScreenWrapper';
 import {useTheme} from '../context/ThemeContext';
 
 import AppTextInput from '../components/AppTextInput';
@@ -66,8 +65,7 @@ export default function SignUpScreen() {
   };
 
   return (
-   <ScreenWrapper>
-  <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+   <FormScreenWrapper>
         <Text style={styles.title}>Sign Up</Text>
 
         <AppTextInput
@@ -114,8 +112,7 @@ export default function SignUpScreen() {
             Login
           </Text>
         </Text>
-      </ScrollView>
-    </ScreenWrapper>
+      </FormScreenWrapper>
   );
 }
 

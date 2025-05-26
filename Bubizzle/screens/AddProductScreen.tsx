@@ -26,6 +26,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RouteProp} from '@react-navigation/native';
 import {RootStackParamList} from '../navigation/RootParamNavigation';
+import FormScreenWrapper from '../components/FormScreenWrapper';
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -215,7 +216,7 @@ export default function AddProductScreen() {
   const styles = getStyles(isDarkMode);
 
   return (
-    <ScrollView style={styles.container}>
+    <FormScreenWrapper>
       <Text style={styles.label}>Title</Text>
       <Controller
         control={control}
@@ -313,7 +314,7 @@ export default function AddProductScreen() {
       </ScrollView>
 
       <Button title="Submit" onPress={handleSubmit(onSubmit)} />
-    </ScrollView>
+    </FormScreenWrapper>
   );
 }
 
