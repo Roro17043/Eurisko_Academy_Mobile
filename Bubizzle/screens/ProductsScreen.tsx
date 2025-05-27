@@ -18,6 +18,9 @@ import api from '../services/api';
 import AppButton from '../components/AppButton';
 import AppTextInput from '../components/AppTextInput';
 import ListScreenWrapper from '../components/ListScreenWrapper';
+import ProductSkeleton from '../components/ProductSkeleton';
+
+
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
@@ -35,6 +38,8 @@ export default function ProductScreen() {
   const styles = getStyles(isDarkMode);
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
 
+
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +49,7 @@ export default function ProductScreen() {
   const [maxPrice, setMaxPrice] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+    const showSkeleton = loading && !refreshing && products.length === 0;
 
   const fetchProducts = async (page = 1) => {
     if (!refreshing) {setLoading(true);}
@@ -212,7 +218,9 @@ export default function ProductScreen() {
               />
             </View>
 
-            {loading && !refreshing && <ActivityIndicator size="large" />}
+            {showSkeleton && <ProductSkeleton />}
+
+
             {error && (
               <>
                 <Text style={styles.errorText}>{error}</Text>

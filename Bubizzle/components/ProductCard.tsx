@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   StyleSheet,
@@ -6,10 +6,15 @@ import {
   Image,
   useColorScheme,
   Dimensions,
-  ScrollView,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolate,
+} from 'react-native-reanimated';
 import AppText from './AppText';
-import { useIsFocused } from '@react-navigation/native';
 
 export type ProductCardProps = {
   title: string;
@@ -23,32 +28,24 @@ const screenWidth = Dimensions.get('window').width;
 export default function ProductCard({ title, price, images, onPress }: ProductCardProps) {
   const isDarkMode = useColorScheme() === 'dark';
   const styles = getStyles(isDarkMode);
-  const scrollRef = useRef<ScrollView>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const isFocused = useIsFocused();
+  const scrollX = useSharedValue(0);
 
-  useEffect(() => {
-    if (!images.length || !isFocused) return;
-    const interval = setInterval(() => {
-      setActiveIndex(prev => {
-        const nextIndex = (prev + 1) % images.length;
-        scrollRef.current?.scrollTo({ x: nextIndex * screenWidth, animated: true });
-        return nextIndex;
-      });
-    }, 4000); // Fixed 4s interval
-    return () => clearInterval(interval);
-  }, [images.length, isFocused]);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollX.value = event.contentOffset.x;
+    },
+  });
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.card}>
       {images && images.length > 0 ? (
         <>
-          <ScrollView
-            ref={scrollRef}
+          <Animated.ScrollView
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            scrollEnabled={false}
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
           >
             {images.map((img, index) => (
               <Image
@@ -58,12 +55,16 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
                 resizeMode="cover"
               />
             ))}
-          </ScrollView>
+          </Animated.ScrollView>
+
           <View style={styles.dotContainer}>
             {images.map((_, index) => (
-              <View
+              <Dot
                 key={index}
-                style={[styles.dot, activeIndex === index && styles.activeDot]}
+                index={index}
+                scrollX={scrollX}
+                isDarkMode={isDarkMode}
+                dotStyle={styles.dotBase}
               />
             ))}
           </View>
@@ -82,12 +83,48 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
   );
 }
 
+const Dot = ({
+  index,
+  scrollX,
+  isDarkMode,
+  dotStyle,
+}: {
+  index: number;
+  scrollX: Animated.SharedValue<number>;
+  isDarkMode: boolean;
+  dotStyle: any;
+}) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      scrollX.value / screenWidth,
+      [index - 1, index, index + 1],
+      [1, 1.3, 1],
+      Extrapolate.CLAMP
+    );
+
+    const opacity = interpolate(
+      scrollX.value / screenWidth,
+      [index - 1, index, index + 1],
+      [0.5, 1, 0.5],
+      Extrapolate.CLAMP
+    );
+
+    return {
+      transform: [{ scale }],
+      opacity,
+      backgroundColor: isDarkMode ? '#666' : '#007aff',
+    };
+  });
+
+  return <Animated.View style={[dotStyle, animatedStyle]} />;
+};
+
 const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
     card: {
       borderRadius: 12,
       overflow: 'hidden',
-      backgroundColor: isDarkMode ? '#2a2a2d' : '#fff',
+      backgroundColor: isDarkMode ? '#2a2a2d' : '#ffffff',
       marginBottom: 16,
       elevation: 3,
       shadowColor: '#000',
@@ -107,7 +144,7 @@ const getStyles = (isDarkMode: boolean) =>
       backgroundColor: isDarkMode ? '#444' : '#eee',
     },
     fallbackText: {
-      color: '#888',
+      color: isDarkMode ? '#aaa' : '#888',
       fontSize: 14,
     },
     dotContainer: {
@@ -115,22 +152,17 @@ const getStyles = (isDarkMode: boolean) =>
       justifyContent: 'center',
       alignItems: 'center',
       paddingVertical: 8,
-      backgroundColor: isDarkMode ? '#2a2a2d' : '#fff',
+      backgroundColor: '#e3e3e8',
     },
-    dot: {
+    dotBase: {
       width: 8,
       height: 8,
       borderRadius: 4,
-      backgroundColor: '#ccc',
       marginHorizontal: 4,
-    },
-    activeDot: {
-      backgroundColor: '#007aff',
-      width: 10,
-      height: 10,
     },
     info: {
       padding: 12,
+      backgroundColor: '#e3e3e8',
     },
     title: {
       fontSize: 16,
