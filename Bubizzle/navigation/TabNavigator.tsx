@@ -8,6 +8,7 @@ import MyProductsScreen from '../screens/MyProductsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import DummyScreen from '../screens/dummyscreens/DummyScreen';
 
+
 const Tab = createBottomTabNavigator();
 
 function getTabBarIcon(routeName: string, focused: boolean, color: string, size: number) {

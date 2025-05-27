@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,15 +6,10 @@ import {
   Image,
   useColorScheme,
   Dimensions,
+  ScrollView,
 } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  interpolate,
-  Extrapolate,
-} from 'react-native-reanimated';
 import AppText from './AppText';
+import { useIsFocused } from '@react-navigation/native';
 
 export type ProductCardProps = {
   title: string;
@@ -28,24 +23,32 @@ const screenWidth = Dimensions.get('window').width;
 export default function ProductCard({ title, price, images, onPress }: ProductCardProps) {
   const isDarkMode = useColorScheme() === 'dark';
   const styles = getStyles(isDarkMode);
-  const scrollX = useSharedValue(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const isFocused = useIsFocused();
 
-  const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
-      scrollX.value = event.contentOffset.x;
-    },
-  });
+  useEffect(() => {
+    if (!images.length || !isFocused) return;
+    const interval = setInterval(() => {
+      setActiveIndex(prev => {
+        const nextIndex = (prev + 1) % images.length;
+        scrollRef.current?.scrollTo({ x: nextIndex * screenWidth, animated: true });
+        return nextIndex;
+      });
+    }, 4000); // Fixed 4s interval
+    return () => clearInterval(interval);
+  }, [images.length, isFocused]);
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.card}>
       {images && images.length > 0 ? (
         <>
-          <Animated.ScrollView
+          <ScrollView
+            ref={scrollRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onScroll={scrollHandler}
-            scrollEventThrottle={16}
+            scrollEnabled={false}
           >
             {images.map((img, index) => (
               <Image
@@ -55,16 +58,12 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
                 resizeMode="cover"
               />
             ))}
-          </Animated.ScrollView>
-
+          </ScrollView>
           <View style={styles.dotContainer}>
             {images.map((_, index) => (
-              <Dot
+              <View
                 key={index}
-                index={index}
-                scrollX={scrollX}
-                isDarkMode={isDarkMode}
-                dotStyle={styles.dotBase}
+                style={[styles.dot, activeIndex === index && styles.activeDot]}
               />
             ))}
           </View>
@@ -82,42 +81,6 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
     </TouchableOpacity>
   );
 }
-
-const Dot = ({
-  index,
-  scrollX,
-  isDarkMode,
-  dotStyle,
-}: {
-  index: number;
-  scrollX: Animated.SharedValue<number>;
-  isDarkMode: boolean;
-  dotStyle: any;
-}) => {
-  const animatedStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      scrollX.value / screenWidth,
-      [index - 1, index, index + 1],
-      [1, 1.3, 1],
-      Extrapolate.CLAMP
-    );
-
-    const opacity = interpolate(
-      scrollX.value / screenWidth,
-      [index - 1, index, index + 1],
-      [0.5, 1, 0.5],
-      Extrapolate.CLAMP
-    );
-
-    return {
-      transform: [{ scale }],
-      opacity,
-      backgroundColor: isDarkMode ? '#666' : '#007aff',
-    };
-  });
-
-  return <Animated.View style={[dotStyle, animatedStyle]} />;
-};
 
 const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
@@ -152,17 +115,23 @@ const getStyles = (isDarkMode: boolean) =>
       justifyContent: 'center',
       alignItems: 'center',
       paddingVertical: 8,
-      backgroundColor: '#e3e3e8',
+      backgroundColor: '#e3e3e8', // ✅ applied
     },
-    dotBase: {
+    dot: {
       width: 8,
       height: 8,
       borderRadius: 4,
+      backgroundColor: isDarkMode ? '#666' : '#bbb',
       marginHorizontal: 4,
+    },
+    activeDot: {
+      backgroundColor: '#007aff',
+      width: 10,
+      height: 10,
     },
     info: {
       padding: 12,
-      backgroundColor: '#e3e3e8',
+      backgroundColor: '#e3e3e8', // ✅ applied
     },
     title: {
       fontSize: 16,
@@ -175,3 +144,5 @@ const getStyles = (isDarkMode: boolean) =>
       marginTop: 4,
     },
   });
+
+

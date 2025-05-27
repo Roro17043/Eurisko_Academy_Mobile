@@ -5,8 +5,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../RTKstore';
 import { RootStackParamList } from './RootParamNavigation';
 
-
-
 // Screens
 // import ProductsScreen from '../screens/ProductsScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -18,6 +16,8 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import EditProductScreen from '../screens/EditProductScreen';
 import AddProductScreen from '../screens/AddProductScreen';
 import LocationPickerScreen from '../screens/LocationPickerScreen';
+import ProductDetailsScreenn from '../components/ProductDetailsScreen';
+
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
