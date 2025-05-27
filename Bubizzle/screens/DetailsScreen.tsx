@@ -27,6 +27,8 @@ import RNFS from 'react-native-fs';
 import MapView, { Marker } from 'react-native-maps';
 import { reverseGeocode } from '../services/geocoding';
 import ListScreenWrapper from '../components/ListScreenWrapper';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../RTKstore/slices/cartSlice';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 type ProductDetailsRouteProp = RouteProp<RootStackParamList, 'ProductDetails'>;
@@ -37,6 +39,7 @@ export default function ProductDetailsScreen() {
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const themeStyles = getStyles(isDarkMode);
+  const dispatch = useDispatch();
 
   const [resolvedLocationName, setResolvedLocationName] = useState<string | null>(null);
   const [product, setProduct] = useState<any>(null);
@@ -167,7 +170,20 @@ export default function ProductDetailsScreen() {
             <TouchableOpacity style={[themeStyles.button, themeStyles.shareButton]}>
               <AppText style={themeStyles.buttonText}>Share</AppText>
             </TouchableOpacity>
-            <TouchableOpacity style={[themeStyles.button, themeStyles.cartButton]}>
+            <TouchableOpacity
+              style={[themeStyles.button, themeStyles.cartButton]}
+              onPress={() => {
+                dispatch(
+                  addToCart({
+                    _id: product._id,
+                    title: product.title,
+                    price: product.price,
+                    imageUrl: `${IMAGE_BASE_URL}${product.images[0]?.url || ''}`,
+                  })
+                );
+                ToastAndroid.show('✅ Added to cart', ToastAndroid.SHORT);
+              }}
+            >
               <AppText style={themeStyles.buttonText}>Add to Cart</AppText>
             </TouchableOpacity>
           </View>
