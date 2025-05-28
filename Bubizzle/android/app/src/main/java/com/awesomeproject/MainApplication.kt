@@ -11,6 +11,8 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
+import android.os.Bundle // ← required for Reanimated
+import com.swmansion.reanimated.ReanimatedPackage
 
 class MainApplication : Application(), ReactApplication {
 
