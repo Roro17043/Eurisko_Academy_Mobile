@@ -4,8 +4,9 @@ import {
   FlatList,
   Text,
   StyleSheet,
-  TouchableOpacity,
+
   Alert,
+  Image,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../RTKstore';
@@ -14,10 +15,13 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { RectButton } from 'react-native-gesture-handler';
 import AppText from '../components/AppText';
 import ListScreenWrapper from '../components/ListScreenWrapper';
+import { useTheme } from '../context/ThemeContext';
 
 export default function CartScreen() {
   const cart = useSelector((state: RootState) => state.cart.items);
   const dispatch = useDispatch();
+  const { isDarkMode } = useTheme();
+  const styles = getStyles(isDarkMode);
 
   const handleRemove = (productId: string) => {
     Alert.alert('Remove Item', 'Are you sure you want to remove this item from the cart?', [
@@ -26,21 +30,22 @@ export default function CartScreen() {
     ]);
   };
 
-  const renderRightActions = (productId: string) => {
-    return (
-      <RectButton style={styles.deleteButton} onPress={() => handleRemove(productId)}>
-        <Text style={styles.deleteText}>Delete</Text>
-      </RectButton>
-    );
-  };
+  const renderRightActions = (productId: string) => (
+    <RectButton style={styles.deleteButton} onPress={() => handleRemove(productId)}>
+      <Text style={styles.deleteText}>Delete</Text>
+    </RectButton>
+  );
 
   const renderItem = ({ item }: any) => (
     <Swipeable renderRightActions={() => renderRightActions(item._id)}>
       <View style={styles.itemContainer}>
-        <AppText style={styles.title}>{item.title}</AppText>
-        <AppText style={styles.details}>
-          ${item.price} × {item.quantity} = ${item.price * item.quantity}
-        </AppText>
+        <Image source={{ uri: item.imageUrl }} style={styles.thumbnail} />
+        <View style={styles.itemText}>
+          <AppText style={styles.title}>{item.title}</AppText>
+          <AppText style={styles.details}>
+            ${item.price} × {item.quantity} = ${item.price * item.quantity}
+          </AppText>
+        </View>
       </View>
     </Swipeable>
   );
@@ -70,59 +75,73 @@ export default function CartScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  itemContainer: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  title: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  details: {
-    color: '#555',
-    marginTop: 4,
-  },
-  deleteButton: {
-    backgroundColor: '#ff3b30',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 80,
-    marginVertical: 10,
-    borderRadius: 10,
-  },
-  deleteText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  totalContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderColor: '#eee',
-    backgroundColor: '#f9f9f9',
-  },
-  totalText: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    textAlign: 'right',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#888',
-  },
-});
+const getStyles = (isDarkMode: boolean) =>
+  StyleSheet.create({
+    listContainer: {
+      paddingHorizontal: 16,
+      paddingBottom: 20,
+    },
+    itemContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDarkMode ? '#2c2c2e' : '#fff',
+      padding: 16,
+      borderRadius: 12,
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    thumbnail: {
+      width: 50,
+      height: 50,
+      borderRadius: 8,
+      marginRight: 12,
+    },
+    itemText: {
+      flex: 1,
+    },
+    title: {
+      fontWeight: 'bold',
+      fontSize: 16,
+      color: isDarkMode ? '#fff' : '#000',
+    },
+    details: {
+      color: isDarkMode ? '#ccc' : '#555',
+      marginTop: 4,
+    },
+    deleteButton: {
+      backgroundColor: '#ff3b30',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 80,
+      marginVertical: 10,
+      borderRadius: 10,
+    },
+    deleteText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    totalContainer: {
+      padding: 16,
+      borderTopWidth: 1,
+      borderColor: isDarkMode ? '#444' : '#eee',
+      backgroundColor: isDarkMode ? '#1c1c1e' : '#f9f9f9',
+    },
+    totalText: {
+      fontWeight: 'bold',
+      fontSize: 18,
+      textAlign: 'right',
+      color: isDarkMode ? '#fff' : '#000',
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontSize: 16,
+      color: isDarkMode ? '#aaa' : '#888',
+    },
+  });

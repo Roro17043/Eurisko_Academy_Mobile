@@ -7,6 +7,7 @@ import RootNavigator from './navigation/RootNavigator';
 import Toast from 'react-native-toast-message';
 import {Text} from 'react-native';
 import ThemedToast from './components/ThemedToast';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const toastConfig = {
   customError: ThemedToast,
@@ -14,6 +15,7 @@ const toastConfig = {
 
 export default function App() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <Provider store={store}>
       <PersistGate loading={<Text>Loading...</Text>} persistor={persistor}>
         <ThemeProvider>
@@ -22,5 +24,6 @@ export default function App() {
         </ThemeProvider>
       </PersistGate>
     </Provider>
+    </GestureHandlerRootView>
   );
 }
