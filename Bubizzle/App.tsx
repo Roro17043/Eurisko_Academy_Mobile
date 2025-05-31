@@ -9,6 +9,7 @@ import { Text } from 'react-native';
 import ThemedToast from './components/ThemedToast';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
+import NotificationInitializer from './services/NotificationInitializer';
 
 const toastConfig = {
   customError: ThemedToast,
@@ -33,6 +34,7 @@ export default function App() {
           <ThemeProvider>
             <NavigationContainer linking={linking}>
               <RootNavigator />
+              <NotificationInitializer />
             </NavigationContainer>
             <Toast config={toastConfig} />
           </ThemeProvider>

@@ -13,7 +13,6 @@ import {
   Linking,
   Platform,
   PermissionsAndroid,
-  Share,
 } from 'react-native';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
@@ -93,17 +92,6 @@ export default function ProductDetailsScreen() {
     }
   };
 
-  const handleShare = async () => {
-    try {
-      const url = `myapp://product/${product._id}`;
-      await Share.share({
-        message: `Check out this product: ${product.title}\n${url}`,
-      });
-    } catch (error) {
-      ToastAndroid.show('❌ Failed to share product', ToastAndroid.SHORT);
-    }
-  };
-
   if (loading) return <ActivityIndicator style={themeStyles.loadingContainer} size="large" />;
   if (error || !product) return (
     <ListScreenWrapper>
@@ -114,7 +102,6 @@ export default function ProductDetailsScreen() {
   return (
     <ListScreenWrapper>
       <Animated.ScrollView
-        key={product._id}
         entering={SlideInUp.duration(600).delay(100)}
         contentContainerStyle={themeStyles.container}
         nestedScrollEnabled
@@ -149,10 +136,7 @@ export default function ProductDetailsScreen() {
           <AppText style={themeStyles.description}>{product.description}</AppText>
 
           <View style={themeStyles.buttonRow}>
-            <TouchableOpacity
-              style={[themeStyles.button, themeStyles.shareButton]}
-              onPress={handleShare}
-            >
+            <TouchableOpacity style={[themeStyles.button, themeStyles.shareButton]}>
               <AppText style={themeStyles.buttonText}>Share</AppText>
             </TouchableOpacity>
             <TouchableOpacity

@@ -25,7 +25,7 @@ export default function RootNavigator() {
       {isLoggedIn ? (
         <>
           <Stack.Screen name="TabViews" component={TabNavigator} />
-          <Stack.Screen name="ProductDetails"  component={ProductDetailsScreen} />
+          <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           <Stack.Screen name="EditProduct" component={EditProductScreen} />
           <Stack.Screen name="AddProduct" component={AddProductScreen} />

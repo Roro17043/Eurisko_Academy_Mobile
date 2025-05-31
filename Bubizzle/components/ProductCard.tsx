@@ -18,7 +18,7 @@ export type ProductCardProps = {
   onPress: () => void;
 };
 
-const screenWidth = Dimensions.get('window').width;
+const screenWidth = Dimensions.get('window').width - 56; // match padding from flatlist container
 
 export default function ProductCard({ title, price, images, onPress }: ProductCardProps) {
   const isDarkMode = useColorScheme() === 'dark';
@@ -35,13 +35,13 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
         scrollRef.current?.scrollTo({ x: nextIndex * screenWidth, animated: true });
         return nextIndex;
       });
-    }, 4000); // Fixed 4s interval
+    }, 4000);
     return () => clearInterval(interval);
   }, [images.length, isFocused]);
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.card}>
-      {images && images.length > 0 ? (
+      {images.length > 0 ? (
         <>
           <ScrollView
             ref={scrollRef}
@@ -59,13 +59,21 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
               />
             ))}
           </ScrollView>
-          <View style={styles.dotContainer}>
-            {images.map((_, index) => (
-              <View
-                key={index}
-                style={[styles.dot, activeIndex === index && styles.activeDot]}
-              />
-            ))}
+
+          {/* Shared container to avoid gap */}
+          <View style={styles.metaWrapper}>
+            <View style={styles.dotContainer}>
+              {images.map((_, index) => (
+                <View
+                  key={index}
+                  style={[styles.dot, activeIndex === index && styles.activeDot]}
+                />
+              ))}
+            </View>
+            <View style={styles.info}>
+              <AppText style={styles.title}>{title}</AppText>
+              <AppText style={styles.price}>${price}</AppText>
+            </View>
           </View>
         </>
       ) : (
@@ -73,11 +81,6 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
           <AppText style={styles.fallbackText}>No Image</AppText>
         </View>
       )}
-
-      <View style={styles.info}>
-        <AppText style={styles.title}>{title}</AppText>
-        <AppText style={styles.price}>${price}</AppText>
-      </View>
     </TouchableOpacity>
   );
 }
@@ -94,6 +97,8 @@ const getStyles = (isDarkMode: boolean) =>
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 6,
+      width: screenWidth,
+      alignSelf: 'center',
     },
     image: {
       width: screenWidth,
@@ -110,12 +115,14 @@ const getStyles = (isDarkMode: boolean) =>
       color: isDarkMode ? '#aaa' : '#888',
       fontSize: 14,
     },
+    metaWrapper: {
+      backgroundColor: isDarkMode ? '#2f2f2f' : '#e3e3e8',
+    },
     dotContainer: {
       flexDirection: 'row',
       justifyContent: 'center',
       alignItems: 'center',
       paddingVertical: 8,
-      backgroundColor: '#e3e3e8', // ✅ applied
     },
     dot: {
       width: 8,
@@ -131,7 +138,6 @@ const getStyles = (isDarkMode: boolean) =>
     },
     info: {
       padding: 12,
-      backgroundColor: '#e3e3e8', // ✅ applied
     },
     title: {
       fontSize: 16,
@@ -144,5 +150,3 @@ const getStyles = (isDarkMode: boolean) =>
       marginTop: 4,
     },
   });
-
-
