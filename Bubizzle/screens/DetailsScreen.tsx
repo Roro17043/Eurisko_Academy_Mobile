@@ -34,6 +34,7 @@ type ProductDetailsRouteProp = RouteProp<RootStackParamList, 'ProductDetails'>;
 export default function ProductDetailsScreen() {
   const route = useRoute<ProductDetailsRouteProp>();
   const { productId } = route.params;
+  console.log('Product ID:', productId);
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const dispatch = useDispatch();
@@ -92,12 +93,12 @@ export default function ProductDetailsScreen() {
     }
   };
 
-  if (loading) return <ActivityIndicator style={themeStyles.loadingContainer} size="large" />;
-  if (error || !product) return (
+  if (loading) {return <ActivityIndicator style={themeStyles.loadingContainer} size="large" />;}
+  if (error || !product) {return (
     <ListScreenWrapper>
       <Text style={themeStyles.errorText}>{error || 'No product found'}</Text>
     </ListScreenWrapper>
-  );
+  );}
 
   return (
     <ListScreenWrapper>

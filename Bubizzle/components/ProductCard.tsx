@@ -35,13 +35,13 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
         scrollRef.current?.scrollTo({ x: nextIndex * screenWidth, animated: true });
         return nextIndex;
       });
-    }, 4000); // Fixed 4s interval
+    }, 4000);
     return () => clearInterval(interval);
   }, [images.length, isFocused]);
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.card}>
-      {images && images.length > 0 ? (
+      {images.length > 0 ? (
         <>
           <ScrollView
             ref={scrollRef}
@@ -87,7 +87,7 @@ const getStyles = (isDarkMode: boolean) =>
     card: {
       borderRadius: 12,
       overflow: 'hidden',
-      backgroundColor: isDarkMode ? '#2a2a2d' : '#ffffff',
+      backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
       marginBottom: 16,
       elevation: 3,
       shadowColor: '#000',
@@ -104,10 +104,10 @@ const getStyles = (isDarkMode: boolean) =>
       height: 200,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: isDarkMode ? '#444' : '#eee',
+      backgroundColor: isDarkMode ? '#333' : '#f0f0f0',
     },
     fallbackText: {
-      color: isDarkMode ? '#aaa' : '#888',
+      color: isDarkMode ? '#aaa' : '#666',
       fontSize: 14,
     },
     dotContainer: {
@@ -115,13 +115,13 @@ const getStyles = (isDarkMode: boolean) =>
       justifyContent: 'center',
       alignItems: 'center',
       paddingVertical: 8,
-      backgroundColor: '#e3e3e8', // ✅ applied
+      backgroundColor: isDarkMode ? '#2c2c2e' : '#e3e3e8',
     },
     dot: {
       width: 8,
       height: 8,
       borderRadius: 4,
-      backgroundColor: isDarkMode ? '#666' : '#bbb',
+      backgroundColor: isDarkMode ? '#555' : '#bbb',
       marginHorizontal: 4,
     },
     activeDot: {
@@ -131,18 +131,16 @@ const getStyles = (isDarkMode: boolean) =>
     },
     info: {
       padding: 12,
-      backgroundColor: '#e3e3e8', // ✅ applied
+      backgroundColor: isDarkMode ? '#2c2c2e' : '#f8f8f8',
     },
     title: {
       fontSize: 16,
       fontWeight: '600',
-      color: isDarkMode ? '#f1f1f1' : '#111',
+      color: isDarkMode ? '#ffffff' : '#111111',
     },
     price: {
       fontSize: 14,
-      color: isDarkMode ? '#9df59b' : 'green',
+      color: isDarkMode ? '#9df59b' : '#2e8b57',
       marginTop: 4,
     },
   });
-
-
