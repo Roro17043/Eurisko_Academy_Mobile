@@ -1,23 +1,16 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, useColorScheme } from 'react-native';
+import {View, Dimensions, StyleSheet} from 'react-native';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 
 const screenWidth = Dimensions.get('window').width;
-const cardWidth = screenWidth - 56;
+const cardWidth = screenWidth - 56; // considering your horizontal padding (28 * 2)
 
-export default function ProductSkeleton({ count = 4 }: { count?: number }) {
-  const isDarkMode = useColorScheme() === 'dark';
-  const styles = getStyles(isDarkMode);
-
+export default function ProductSkeleton() {
   return (
     <View style={styles.wrapper}>
-      {[...Array(count)].map((_, index) => (
+      {[...Array(4)].map((_, index) => (
         <View key={index} style={styles.shadowBox}>
-          <SkeletonPlaceholder
-            borderRadius={12}
-            backgroundColor={isDarkMode ? '#444' : '#E1E9EE'}
-            highlightColor={isDarkMode ? '#555' : '#F2F8FC'}
-          >
+          <SkeletonPlaceholder borderRadius={12}>
             <View style={styles.card}>
               <View style={styles.image} />
               <View style={styles.dotsContainer}>
@@ -37,56 +30,54 @@ export default function ProductSkeleton({ count = 4 }: { count?: number }) {
   );
 }
 
-const getStyles = (isDarkMode: boolean) =>
-  StyleSheet.create({
-    wrapper: {
-      paddingTop: 12,
-      alignItems: 'center',
-    },
-    shadowBox: {
-      width: cardWidth,
-      borderRadius: 12,
-      backgroundColor: isDarkMode ? '#2a2a2d' : '#fff',
-      marginBottom: 16,
-      elevation: 3,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 6,
-    },
-    card: {
-      borderRadius: 12,
-      overflow: 'hidden',
-      width: '100%',
-    },
-    image: {
-      height: 200,
-      borderBottomLeftRadius: 0,
-      borderBottomRightRadius: 0,
-    },
-    dotsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      paddingVertical: 10,
-    },
-    dot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      marginHorizontal: 4,
-    },
-    info: {
-      padding: 12,
-    },
-    title: {
-      width: '60%',
-      height: 22,
-      borderRadius: 4,
-      marginBottom: 8,
-    },
-    price: {
-      width: '30%',
-      height: 18,
-      borderRadius: 4,
-    },
-  });
+const styles = StyleSheet.create({
+  wrapper: {
+    paddingTop: 12,
+  },
+  shadowBox: {
+    borderRadius: 12,
+    backgroundColor: '#2a2a2d',
+    marginBottom: 16,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  card: {
+    borderRadius: 12,
+    backgroundColor: '#333',
+  },
+  image: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    height: 200,
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginHorizontal: 4,
+  },
+  info: {
+    padding: 12,
+  },
+  title: {
+    width: '60%',
+    height: 20,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  price: {
+    width: '30%',
+    height: 16,
+    borderRadius: 4,
+  },
+});

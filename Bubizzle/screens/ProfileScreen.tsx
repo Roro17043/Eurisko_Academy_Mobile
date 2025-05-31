@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState} from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -19,7 +19,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootParamNavigation';
 import api from '../services/api';
 
-
 export default function ProfileScreen() {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
@@ -31,7 +30,6 @@ export default function ProfileScreen() {
 
   // Track if profile needs re-fetching
   const shouldRefetchRef = useRef(true);
-
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);

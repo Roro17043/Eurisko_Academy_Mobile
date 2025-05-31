@@ -1,41 +1,35 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { Text } from 'react-native';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 import { store, persistor } from './RTKstore';
 import { ThemeProvider } from './context/ThemeContext';
 import RootNavigator from './navigation/RootNavigator';
 import Toast from 'react-native-toast-message';
-import { Text } from 'react-native';
 import ThemedToast from './components/ThemedToast';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { NavigationContainer } from '@react-navigation/native';
+
 import NotificationInitializer from './services/NotificationInitializer';
+import { initializeOneSignal, removeOneSignalListeners } from './services/onesignalSetup';
 
 const toastConfig = {
   customError: ThemedToast,
 };
 
-// ✅ Deep linking config
-const linking = {
-  prefixes: ['myapp://'],
-  config: {
-    screens: {
-      ProductDetails: 'product/:productId',
-      // Add other screens here if needed
-    },
-  },
-};
-
 export default function App() {
+  useEffect(() => {
+    initializeOneSignal();
+    return () => removeOneSignalListeners();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Provider store={store}>
         <PersistGate loading={<Text>Loading...</Text>} persistor={persistor}>
           <ThemeProvider>
-            <NavigationContainer linking={linking}>
-              <RootNavigator />
-              <NotificationInitializer />
-            </NavigationContainer>
+            <NotificationInitializer />
+            <RootNavigator />
             <Toast config={toastConfig} />
           </ThemeProvider>
         </PersistGate>
