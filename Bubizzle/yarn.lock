@@ -4038,7 +4038,7 @@ internal-slot@^1.1.0:
     hasown "^2.0.2"
     side-channel "^1.1.0"
 
-invariant@^2.2.4:
+invariant@^2.2.2, invariant@^2.2.4:
   version "2.2.4"
   resolved "https://registry.npmjs.org/invariant/-/invariant-2.2.4.tgz"
   integrity sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==
@@ -5762,6 +5762,13 @@ react-native-maps@^1.23.8:
   integrity sha512-oYuJFZ/MV5URkJRloDlZM3+tb4PkT93Qg19b9c03txCPUpUj70HKXjDTrr7RTRGY1Nu66NTlLoKeV635WI8wQQ==
   dependencies:
     "@types/geojson" "^7946.0.13"
+
+react-native-onesignal@^5.2.12:
+  version "5.2.12"
+  resolved "https://registry.yarnpkg.com/react-native-onesignal/-/react-native-onesignal-5.2.12.tgz#53a6f11d43bd08d91830a2a7ace719d133ada696"
+  integrity sha512-++IzWhFwDIVvMTLuWxFEMhQ85CWXAxpg1D0IUteSQ9MJQxFBd3eFCoL/LrHxdACv2djVXSdWlpS/jIjzsAREAg==
+  dependencies:
+    invariant "^2.2.2"
 
 react-native-pager-view@^6.8.0:
   version "6.8.0"

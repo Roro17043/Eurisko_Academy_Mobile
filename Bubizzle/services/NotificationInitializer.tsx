@@ -27,7 +27,7 @@ export default function NotificationInitializer() {
             },
           },
         });
-      },60 * 1000); // 1 minutes
+      },5 * 60 * 1000); // 1 minutes
 
       // Clear on app close or background
       const handleAppStateChange = (nextAppState: string) => {
