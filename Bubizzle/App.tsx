@@ -7,14 +7,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { store, persistor } from './RTKstore';
 import { ThemeProvider } from './context/ThemeContext';
 import RootNavigator from './navigation/RootNavigator';
-import Toast from 'react-native-toast-message';
-import ThemedToast from './components/ThemedToast';
+import Toast, {BaseToastProps} from 'react-native-toast-message';
+import {ThemedToast} from './components/ThemedToast';
 
 import NotificationInitializer from './services/NotificationInitializer';
 import { initializeOneSignal, removeOneSignalListeners } from './services/onesignalSetup';
 
 const toastConfig = {
-  customError: ThemedToast,
+  success: (props: BaseToastProps) => <ThemedToast {...props} />,
+  error: (props: BaseToastProps) => <ThemedToast {...props} />,
 };
 
 export default function App() {

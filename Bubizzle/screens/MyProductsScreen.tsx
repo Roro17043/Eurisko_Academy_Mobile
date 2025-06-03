@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useCallback} from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -9,28 +9,30 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import {useSelector} from 'react-redux';
-import {RootState} from '../RTKstore';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../RTKstore';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AppText from '../components/AppText';
-import {useTheme} from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
 import { useThemedToast } from '../services/ShowToast';
 import ListScreenWrapper from '../components/ListScreenWrapper';
+import { reverseGeocode } from '../services/geocoding';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
 export default function MyProductsScreen() {
-  const {isDarkMode} = useTheme();
+  const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const navigation = useNavigation<any>();
 
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
-   const { showErrorToast, showSuccessToast } = useThemedToast();
+  const { showErrorToast, showSuccessToast } = useThemedToast();
 
   const [myProducts, setMyProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [locations, setLocations] = useState<Record<string, string>>({});
 
   const fetchMyProducts = useCallback(async () => {
     try {
@@ -41,8 +43,8 @@ export default function MyProductsScreen() {
 
       while (hasNext) {
         const res = await api.get('/products', {
-          headers: {Authorization: `Bearer ${accessToken}`},
-          params: {page, limit: 10},
+          headers: { Authorization: `Bearer ${accessToken}` },
+          params: { page, limit: 10 },
         });
 
         const data = res.data.data || [];
@@ -51,110 +53,107 @@ export default function MyProductsScreen() {
         page += 1;
       }
 
-      const filtered = allProducts.filter(
-        (product: any) => product.user?._id === userId,
-      );
-
+      const filtered = allProducts.filter((product: any) => product.user?._id === userId);
       setMyProducts(filtered);
+
+      const newLocations: Record<string, string> = {};
+      await Promise.all(
+        filtered.map(async product => {
+          const { latitude, longitude } = product.location ?? {};
+          if (latitude && longitude) {
+            const address = await reverseGeocode(latitude, longitude);
+            newLocations[product._id] = address;
+          }
+        })
+      );
+      setLocations(newLocations);
     } catch (err: any) {
-      showErrorToast('Could not load product details.');
+      const message =
+        err?.response?.data?.message || err.message || 'Could not load product details.';
+      showErrorToast(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accessToken, userId, showErrorToast]);
 
   useFocusEffect(
     useCallback(() => {
       fetchMyProducts();
-    }, [fetchMyProducts]),
+    }, [fetchMyProducts])
   );
 
   const deleteProduct = async (productId: string) => {
-    Alert.alert(
-      'Confirm Delete',
-      'Are you sure you want to delete this product?',
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.delete(`/products/${productId}`, {
-                headers: {Authorization: `Bearer ${accessToken}`},
-              });
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this product?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/products/${productId}`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
 
-              setMyProducts(prev => prev.filter(p => p._id !== productId));
-              Alert.alert('Deleted', 'Product has been removed');
-            } catch {
-              Alert.alert('Error', 'Failed to delete product');
-            }
-          },
+            setMyProducts(prev => prev.filter(p => p._id !== productId));
+            showSuccessToast('Product deleted successfully');
+          } catch (err: any) {
+            const message =
+              err?.response?.data?.message || err.message || 'Failed to delete product.';
+            showErrorToast(message);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
-
-  useEffect(() => {
-    fetchMyProducts(); // initial fetch
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchMyProducts(); // refetch on screen focus
-    }, []),
-  );
 
   return (
     <ListScreenWrapper>
-  {loading ? (
-    <ActivityIndicator size="large" style={styles.loadingcontainer} />
-  ) : myProducts.length === 0 ? (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.empty}>No products added yet.</Text>
-      <TouchableOpacity style={styles.retryButton} onPress={fetchMyProducts}>
-        <Text style={styles.retryText}>Retry</Text>
-      </TouchableOpacity>
-    </View>
-  ) : (
-    <FlatList
-      data={myProducts}
-      keyExtractor={item => item._id}
-      renderItem={({ item }) => (
-        <View style={styles.card}>
-          <Image
-            source={{ uri: `${IMAGE_BASE_URL}${item.images[0]?.url}` }}
-            style={styles.image}
-          />
-          <View style={styles.info}>
-            <AppText style={styles.title}>{item.title}</AppText>
-            <AppText style={styles.price}>${item.price}</AppText>
-            <AppText style={styles.location}>
-              📍 Dummy Location: {item.location?.latitude ?? 33.89}°,{' '}
-              {item.location?.longitude ?? 35.5}°
-            </AppText>
-            <View style={styles.actions}>
-              <TouchableOpacity
-                style={styles.edit}
-                onPress={() =>
-                  navigation.navigate('EditProduct', { productId: item._id })
-                }>
-                <AppText style={styles.btnText}>Edit</AppText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.delete}
-                onPress={() => deleteProduct(item._id)}>
-                <AppText style={styles.btnText}>Delete</AppText>
-              </TouchableOpacity>
-            </View>
-          </View>
+      {loading ? (
+        <ActivityIndicator size="large" style={styles.loadingcontainer} />
+      ) : myProducts.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.empty}>No products added yet.</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchMyProducts}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
         </View>
+      ) : (
+        <FlatList
+          data={myProducts}
+          keyExtractor={item => item._id}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Image
+                source={{ uri: `${IMAGE_BASE_URL}${item.images[0]?.url}` }}
+                style={styles.image}
+              />
+              <View style={styles.info}>
+                <AppText style={styles.title}>{item.title}</AppText>
+                <AppText style={styles.price}>${item.price}</AppText>
+                <AppText style={styles.location}>
+                  📍 {locations[item._id] || 'Loading location...'}
+                </AppText>
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={styles.edit}
+                    onPress={() => navigation.navigate('EditProduct', { productId: item._id })}
+                  >
+                    <AppText style={styles.btnText}>Edit</AppText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.delete}
+                    onPress={() => deleteProduct(item._id)}
+                  >
+                    <AppText style={styles.btnText}>Delete</AppText>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )}
+          contentContainerStyle={styles.listContent}
+        />
       )}
-      contentContainerStyle={styles.listContent}
-    />
-  )}
-</ListScreenWrapper>
-
+    </ListScreenWrapper>
   );
 }
 
@@ -187,7 +186,6 @@ const getStyles = (isDarkMode: boolean) =>
       color: '#fff',
       fontWeight: '600',
     },
-
     empty: {
       textAlign: 'center',
       color: '#999',
@@ -244,8 +242,7 @@ const getStyles = (isDarkMode: boolean) =>
       fontWeight: '600',
     },
     listContent: {
-  padding: 20,
-  paddingTop: 12, // enough to clear under status bar (SafeAreaView helps too)
-},
-
+      padding: 20,
+      paddingTop: 12,
+    },
   });

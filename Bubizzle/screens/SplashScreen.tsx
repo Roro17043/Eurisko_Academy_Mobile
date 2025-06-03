@@ -20,7 +20,7 @@ export default function SplashScreen() {
     }, 3000);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [isLoggedIn, navigation]);
 
   const backgroundStyle =
     scheme === 'dark' ? styles.darkBackground : styles.lightBackground;

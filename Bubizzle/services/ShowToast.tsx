@@ -6,11 +6,12 @@ export const useThemedToast = () => {
 
   const showErrorToast = (message: string) => {
     Toast.show({
-      type: 'customError',
+      type: 'error',
       text1: 'Error',
       text2: message,
       position: 'top',
       visibilityTime: 3000,
+      topOffset: 50,
       props: {
         isDarkMode,
         borderColor: isDarkMode ? '#ff453a' : '#ff3b30',
@@ -18,5 +19,20 @@ export const useThemedToast = () => {
     });
   };
 
-  return { showErrorToast };
+  const showSuccessToast = (message: string) => {
+    Toast.show({
+      type: 'success',
+      text1: 'Success',
+      text2: message,
+      position: 'top',
+      visibilityTime: 3000,
+      topOffset: 50,
+      props: {
+        isDarkMode,
+        borderColor: isDarkMode ? '#32d74b' : '#34c759',
+      },
+    });
+  };
+
+  return { showErrorToast, showSuccessToast };
 };
