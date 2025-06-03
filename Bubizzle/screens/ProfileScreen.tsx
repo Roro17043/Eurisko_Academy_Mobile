@@ -12,7 +12,7 @@ import ListScreenWrapper from '../components/ListScreenWrapper';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useDispatch } from 'react-redux';
-import { logout } from '../RTKstore/slices/authSlice';
+import { logout } from '../storage/RTKstore/slices/authSlice';
 import ThemeButton from '../components/ThemeButton';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';

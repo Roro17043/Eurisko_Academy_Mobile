@@ -25,7 +25,7 @@ import MapView, { Marker } from 'react-native-maps';
 import ListScreenWrapper from '../components/ListScreenWrapper';
 import { reverseGeocode } from '../services/geocoding';
 import { useDispatch } from 'react-redux';
-import { addToCart } from '../RTKstore/slices/cartSlice';
+import { addToCart } from '../storage/RTKstore/slices/cartSlice';
 import Animated, { SlideInUp } from 'react-native-reanimated';
 
 const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';

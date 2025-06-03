@@ -1,26 +1,12 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, StyleSheet, useColorScheme } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
 import LottieView from 'lottie-react-native';
-import { RootState } from '../RTKstore';
 
 export default function SplashScreen() {
-  const navigation = useNavigation<any>();
   const scheme = useColorScheme();
-  const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
-
   const animation = scheme === 'dark'
     ? require('../assets/splashscreen/Animation - dark mode.json')
     : require('../assets/splashscreen/Animation - light mode.json');
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      navigation.replace(isLoggedIn ? 'TabViews' : 'Login');
-    }, 3000);
-
-    return () => clearTimeout(timeout);
-  }, [isLoggedIn, navigation]);
 
   const backgroundStyle =
     scheme === 'dark' ? styles.darkBackground : styles.lightBackground;

@@ -5,7 +5,7 @@ import {useForm, Controller} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useSelector} from 'react-redux';
-import {RootState} from '../RTKstore';
+import {RootState} from '../storage/RTKstore';
 import AppTextInput from '../components/AppTextInput';
 import AppButton from '../components/AppButton';
 import api from '../services/api';

@@ -6,6 +6,8 @@ import {
 } from 'react-native-onesignal';
 import { navigationRef } from '../navigation/navigationRef';
 import notifee from '@notifee/react-native';
+import { ONESIGNAL_APP_ID } from '@env';
+
 
 function onForegroundDisplay(event: NotificationWillDisplayEvent) {
   console.log('🔔 Foreground notification:', event);
@@ -34,7 +36,7 @@ function onNotificationClick(event: NotificationClickEvent) {
 
 export function initializeOneSignal() {
   OneSignal.Debug.setLogLevel(LogLevel.Verbose);
-  OneSignal.initialize('3f59a255-0fa9-46d1-8408-12c0d7ab02fa');
+  OneSignal.initialize(ONESIGNAL_APP_ID);
   OneSignal.Notifications.requestPermission(false);
 
   OneSignal.User.pushSubscription.getTokenAsync().then(token => {

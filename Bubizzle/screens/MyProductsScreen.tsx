@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSelector } from 'react-redux';
-import { RootState } from '../RTKstore';
+import { RootState } from '../storage/RTKstore';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AppText from '../components/AppText';
 import { useTheme } from '../context/ThemeContext';

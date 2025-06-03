@@ -9,8 +9,8 @@ import {
   Image,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../RTKstore';
-import { removeFromCart } from '../RTKstore/slices/cartSlice';
+import { RootState } from '../storage/RTKstore';
+import { removeFromCart } from '../storage/RTKstore/slices/cartSlice';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { RectButton } from 'react-native-gesture-handler';
 import AppText from '../components/AppText';

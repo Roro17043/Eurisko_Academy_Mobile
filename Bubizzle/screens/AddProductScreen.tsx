@@ -19,7 +19,7 @@ import Toast from 'react-native-toast-message';
 import api from '../services/api';
 import {useTheme} from '../context/ThemeContext';
 import {useSelector} from 'react-redux';
-import {RootState} from '../RTKstore';
+import {RootState} from '../storage/RTKstore';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation, useRoute} from '@react-navigation/native';

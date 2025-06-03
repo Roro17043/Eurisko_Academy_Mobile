@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyDxwbSv4YqUpyT9mj8bsLRbAOTHkf8vHLA';
+import {GOOGLE_MAPS_API_KEY} from '@env';
 
 export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
   try {

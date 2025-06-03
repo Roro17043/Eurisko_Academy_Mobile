@@ -1,6 +1,7 @@
 import axios from 'axios';
-import { store } from '../RTKstore';
-import { logout, setCredentials } from '../RTKstore/slices/authSlice';
+import { store } from '../storage/RTKstore';
+import { logout, setCredentials } from '../storage/RTKstore/slices/authSlice';
+import { saveTokens, removeTokens } from '../storage/tokenStorage';
 
 const api = axios.create({
   baseURL: 'https://backend-practice.eurisko.me/api',
@@ -36,9 +37,13 @@ api.interceptors.response.use(
   response => response,
   async error => {
     const originalRequest = error.config;
-    const { refreshToken, email } = store.getState().auth;
+    const { refreshToken } = store.getState().auth;
 
-    if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry && refreshToken) {
+    if (
+      (error.response?.status === 401 || error.response?.status === 403) &&
+      !originalRequest._retry &&
+      refreshToken
+    ) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -55,15 +60,24 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await axios.post('https://backend-practice.eurisko.me/api/auth/refresh-token', {
-          refreshToken,
-        });
+        const response = await axios.post(
+          'https://backend-practice.eurisko.me/api/auth/refresh-token',
+          { refreshToken }
+        );
 
         const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+        const user = store.getState().auth.user;
+        if (!user) throw new Error('User not found in Redux store.');
 
-        if (!email) throw new Error('Email is missing in Redux store.');
+        // Update Redux
+        store.dispatch(setCredentials({
+          accessToken,
+          refreshToken: newRefreshToken,
+          user,
+        }));
 
-        store.dispatch(setCredentials({ accessToken, refreshToken: newRefreshToken, email }));
+        // Save to Encrypted Storage
+        await saveTokens(accessToken, newRefreshToken);
 
         processQueue(null, accessToken);
         originalRequest.headers.Authorization = 'Bearer ' + accessToken;
@@ -71,6 +85,7 @@ api.interceptors.response.use(
       } catch (err) {
         processQueue(err, null);
         store.dispatch(logout());
+        await removeTokens();
         return Promise.reject(err);
       } finally {
         isRefreshing = false;

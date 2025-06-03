@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
-  ActivityIndicator,
   Text,
   RefreshControl,
   View,
@@ -13,7 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import SearchBar from '../components/SearchBar';
 import { useSelector } from 'react-redux';
-import { RootState } from '../RTKstore';
+import { RootState } from '../storage/RTKstore';
 import api from '../services/api';
 import AppButton from '../components/AppButton';
 import AppTextInput from '../components/AppTextInput';

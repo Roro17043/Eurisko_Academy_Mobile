@@ -44,8 +44,7 @@ export default function VerificationScreen() {
 
   // Countdown timer
   useEffect(() => {
-    if (timer <= 0) {return};
-
+    if (timer <= 0) {return;}
     const interval = setInterval(() => {
       setTimer(prev => prev - 1);
     }, 1000);
