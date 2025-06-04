@@ -1,25 +1,26 @@
-import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../context/ThemeContext';
+import React, {useState} from 'react';
+import {View, StyleSheet, TouchableOpacity} from 'react-native';
+import {useForm, Controller} from 'react-hook-form';
+import {z} from 'zod';
+import {zodResolver} from '@hookform/resolvers/zod';
+import {useNavigation} from '@react-navigation/native';
+import {useTheme} from '../context/ThemeContext';
 import AppButton from '../components/AppButton';
 import AppText from '../components/AppText';
 import AppTextInput from '../components/AppTextInput';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '../storage/RTKstore';
-import { setCredentials } from '../storage/RTKstore/slices/authSlice';
+import {useDispatch} from 'react-redux';
+import {AppDispatch} from '../storage/RTKstore';
+import {setCredentials} from '../storage/RTKstore/slices/authSlice';
 import api from '../services/api';
-import { useThemedToast } from '../services/ShowToast';
+import {useThemedToast} from '../services/ShowToast';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FormScreenWrapper from '../components/FormScreenWrapper';
-import { saveTokens } from '../storage/tokenStorage';
+import {saveTokens} from '../storage/tokenStorage';
+import crashlytics from '@react-native-firebase/crashlytics';
+
+const triggerCrash = () => {
+ crashlytics().crash();
+};
 
 const loginSchema = z.object({
   email: z.union([
@@ -38,37 +39,37 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginScreen() {
   const navigation = useNavigation<any>();
-  const { isDarkMode } = useTheme();
+  const {isDarkMode} = useTheme();
   const styles = getStyles(isDarkMode);
   const dispatch = useDispatch<AppDispatch>();
-  const { showErrorToast } = useThemedToast();
+  const {showErrorToast} = useThemedToast();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: {errors},
     setError,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-  defaultValues: __DEV__
-    ? {
-        email: 'rouhanasalameh83@gmail.com',
-        password: '123456',
-      }
-    : {
-        email: '',
-        password: '',
-      },
-});
+    defaultValues: __DEV__
+      ? {
+          email: 'rouhanasalameh83@gmail.com',
+          password: '123456',
+        }
+      : {
+          email: '',
+          password: '',
+        },
+  });
 
   const onSubmit = async (data: LoginFormData) => {
     try {
       const loginRes = await api.post('/auth/login', data);
-      const { accessToken, refreshToken } = loginRes.data.data;
+      const {accessToken, refreshToken} = loginRes.data.data;
 
       const profileRes = await api.get('/user/profile', {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        headers: {Authorization: `Bearer ${accessToken}`},
       });
 
       const user = profileRes.data.data.user;
@@ -95,12 +96,12 @@ export default function LoginScreen() {
       const errorMessage = err?.response?.data?.message;
 
       if (statusCode === 404) {
-        setError('email', { message: 'Email not found' });
+        setError('email', {message: 'Email not found'});
         return;
       }
 
       if (statusCode === 401) {
-        setError('password', { message: 'Incorrect password' });
+        setError('password', {message: 'Incorrect password'});
         return;
       }
 
@@ -125,7 +126,7 @@ export default function LoginScreen() {
         <Controller
           control={control}
           name="email"
-          render={({ field: { onChange, onBlur, value } }) => (
+          render={({field: {onChange, onBlur, value}}) => (
             <AppTextInput
               placeholder="Email or Username"
               placeholderTextColor={isDarkMode ? '#999' : '#666'}
@@ -144,7 +145,7 @@ export default function LoginScreen() {
         <Controller
           control={control}
           name="password"
-          render={({ field: { onChange, onBlur, value } }) => (
+          render={({field: {onChange, onBlur, value}}) => (
             <View style={styles.inputWithIcon}>
               <AppTextInput
                 placeholder="Password"
@@ -157,8 +158,7 @@ export default function LoginScreen() {
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(prev => !prev)}
-                style={styles.eyeIcon}
-              >
+                style={styles.eyeIcon}>
                 <Icon
                   name={showPassword ? 'eye-off' : 'eye'}
                   size={22}
@@ -177,6 +177,9 @@ export default function LoginScreen() {
             <AppText style={styles.signupLink}>Sign up</AppText>
           </AppText>
         </TouchableOpacity>
+      </View>
+      <View style={{marginBottom: 40}}>
+        <AppButton title="🚨 Trigger Test Crash" onPress={triggerCrash} />
       </View>
     </FormScreenWrapper>
   );
@@ -213,7 +216,7 @@ const getStyles = (isDarkMode: boolean) =>
       position: 'absolute',
       right: 12,
       top: '40%',
-      transform: [{ translateY: -11 }],
+      transform: [{translateY: -11}],
       zIndex: 1,
     },
     error: {

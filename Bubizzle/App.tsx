@@ -14,6 +14,7 @@ import SplashScreen from './screens/SplashScreen'; // 👈 import your splash sc
 import NotificationInitializer from './services/NotificationInitializer';
 import { initializeOneSignal, removeOneSignalListeners } from './services/onesignalSetup';
 
+
 const toastConfig = {
   success: (props: BaseToastProps) => <ThemedToast {...props} />,
   error: (props: BaseToastProps) => <ThemedToast {...props} />,
