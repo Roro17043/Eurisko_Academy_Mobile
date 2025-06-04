@@ -5,7 +5,7 @@ import { saveTokens, removeTokens } from '../storage/tokenStorage';
 
 const api = axios.create({
   baseURL: 'https://backend-practice.eurisko.me/api',
-  timeout: 30000,
+  timeout: 20000,
 });
 
 api.interceptors.request.use(
@@ -67,7 +67,7 @@ api.interceptors.response.use(
 
         const { accessToken, refreshToken: newRefreshToken } = response.data.data;
         const user = store.getState().auth.user;
-        if (!user) throw new Error('User not found in Redux store.');
+        if (!user) {throw new Error('User not found in Redux store.');}
 
         // Update Redux
         store.dispatch(setCredentials({

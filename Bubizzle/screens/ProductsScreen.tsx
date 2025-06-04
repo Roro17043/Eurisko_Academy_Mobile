@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,34 +8,31 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import ProductCard from '../components/ProductCard';
-import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../context/ThemeContext';
+import {useNavigation} from '@react-navigation/native';
+import {useTheme} from '../context/ThemeContext';
 import SearchBar from '../components/SearchBar';
-import { useSelector } from 'react-redux';
-import { RootState } from '../storage/RTKstore';
+import {useSelector} from 'react-redux';
+import {RootState} from '../storage/RTKstore';
 import api from '../services/api';
 import AppButton from '../components/AppButton';
 import AppTextInput from '../components/AppTextInput';
 import ListScreenWrapper from '../components/ListScreenWrapper';
 import ProductSkeleton from '../components/ProductSkeleton';
-import { IMAGE_BASE_URL } from '@env';
-
+import {IMAGE_BASE_URL} from '@env';
 
 export type Product = {
   _id: string;
   title: string;
   description: string;
   price: number;
-  images: { url: string }[];
+  images: {url: string}[];
 };
 
 export default function ProductScreen() {
   const navigation = useNavigation<any>();
-  const { isDarkMode } = useTheme();
+  const {isDarkMode} = useTheme();
   const styles = getStyles(isDarkMode);
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
-
-
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,9 +41,10 @@ export default function ProductScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-    const showSkeleton = loading && !refreshing && products.length === 0;
+  const showSkeleton = loading && !refreshing && products.length === 0;
 
   const fetchProducts = async (page = 1) => {
     if (!refreshing) {setLoading(true);}
@@ -54,8 +52,8 @@ export default function ProductScreen() {
 
     try {
       const response = await api.get('/products', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params: { page, limit: 10 },
+        headers: {Authorization: `Bearer ${accessToken}`},
+        params: {page, limit: 10},
       });
 
       if (response.data.success) {
@@ -84,15 +82,16 @@ export default function ProductScreen() {
   const fetchSearchedProducts = async (
     query: string,
     min?: string,
-    max?: string
+    max?: string,
+    order?: 'asc' | 'desc' | null,
   ) => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await api.get('/products/search', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params: { query },
+        headers: {Authorization: `Bearer ${accessToken}`},
+        params: {query},
       });
 
       let filtered = response.data.data;
@@ -104,6 +103,12 @@ export default function ProductScreen() {
         if (maxVal !== null && item.price > maxVal) {return false;}
         return true;
       });
+
+      if (order === 'asc') {
+        filtered.sort((a: Product, b: Product) => a.price - b.price);
+      } else if (order === 'desc') {
+        filtered.sort((a: Product, b: Product) => b.price - a.price);
+      }
 
       setProducts(filtered);
       setCurrentPage(1);
@@ -140,10 +145,12 @@ export default function ProductScreen() {
         <TouchableOpacity
           key={i}
           onPress={() => handlePageChange(i)}
-          style={[styles.pageButton, currentPage === i && styles.activePageButton]}
-        >
+          style={[
+            styles.pageButton,
+            currentPage === i && styles.activePageButton,
+          ]}>
           <Text style={styles.pageText}>{i}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity>,
       );
     }
 
@@ -152,8 +159,7 @@ export default function ProductScreen() {
         <TouchableOpacity
           onPress={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          style={styles.pageButton}
-        >
+          style={styles.pageButton}>
           <Text style={styles.pageText}>Prev</Text>
         </TouchableOpacity>
 
@@ -162,8 +168,7 @@ export default function ProductScreen() {
         <TouchableOpacity
           onPress={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          style={styles.pageButton}
-        >
+          style={styles.pageButton}>
           <Text style={styles.pageText}>Next</Text>
         </TouchableOpacity>
       </View>
@@ -171,25 +176,29 @@ export default function ProductScreen() {
   };
 
   return (
-     <ListScreenWrapper>
+    <ListScreenWrapper>
       <FlatList
         data={products}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
+        keyExtractor={item => item._id}
+        renderItem={({item}) => (
           <ProductCard
             title={item.title}
             price={item.price}
-            images={item.images.map((img) => ({ uri: `${IMAGE_BASE_URL}${img.url}` }))}
-            onPress={() => navigation.navigate('ProductDetails', { productId: item._id })}
+            images={item.images.map(img => ({
+              uri: `${IMAGE_BASE_URL}${img.url}`,
+            }))}
+            onPress={() =>
+              navigation.navigate('ProductDetails', {productId: item._id})
+            }
           />
         )}
         ListHeaderComponent={
           <View style={styles.innerContainer}>
             <SearchBar
               value={searchQuery}
-              onChangeText={(text) => {
+              onChangeText={text => {
                 setSearchQuery(text);
-                fetchSearchedProducts(text, minPrice, maxPrice);
+                fetchSearchedProducts(text, minPrice, maxPrice, sortOrder);
               }}
             />
             <View style={styles.priceFilterRow}>
@@ -197,9 +206,9 @@ export default function ProductScreen() {
                 placeholder="Min Price"
                 keyboardType="numeric"
                 value={minPrice}
-                onChangeText={(text) => {
+                onChangeText={text => {
                   setMinPrice(text);
-                  fetchSearchedProducts(searchQuery, text, maxPrice);
+                  fetchSearchedProducts(searchQuery, text, maxPrice, sortOrder);
                 }}
                 style={styles.priceInput}
               />
@@ -207,27 +216,56 @@ export default function ProductScreen() {
                 placeholder="Max Price"
                 keyboardType="numeric"
                 value={maxPrice}
-                onChangeText={(text) => {
+                onChangeText={text => {
                   setMaxPrice(text);
-                  fetchSearchedProducts(searchQuery, minPrice, text);
+                  fetchSearchedProducts(searchQuery, minPrice, text, sortOrder);
                 }}
                 style={styles.priceInput}
               />
             </View>
 
-            {showSkeleton && <ProductSkeleton />}
+            <View style={styles.priceFilterDirection}>
+              <AppButton
+                title="Price: Low to High"
+                onPress={() => {
+                  setSortOrder('asc');
+                  fetchSearchedProducts(searchQuery, minPrice, maxPrice, 'asc');
+                }}
+              />
+              <AppButton
+                title="Price: High to Low"
+                onPress={() => {
+                  setSortOrder('desc');
+                  fetchSearchedProducts(
+                    searchQuery,
+                    minPrice,
+                    maxPrice,
+                    'desc',
+                  );
+                }}
+              />
+            </View>
 
+            {showSkeleton && <ProductSkeleton />}
 
             {error && (
               <>
                 <Text style={styles.errorText}>{error}</Text>
-                <AppButton title="Retry" onPress={() => fetchProducts(currentPage)} style={styles.retryButton} />
+                <AppButton
+                  title="Retry"
+                  onPress={() => fetchProducts(currentPage)}
+                  style={styles.retryButton}
+                />
               </>
             )}
             {!error && products.length === 0 && (
               <>
                 <Text style={styles.emptyText}>No products found</Text>
-                <AppButton title="Retry" onPress={() => fetchProducts(currentPage)} style={styles.retryButton} />
+                <AppButton
+                  title="Retry"
+                  onPress={() => fetchProducts(currentPage)}
+                  style={styles.retryButton}
+                />
               </>
             )}
           </View>
@@ -280,6 +318,12 @@ const getStyles = (isDarkMode: boolean) =>
       marginTop: -10,
       gap: 12,
     },
+    priceFilterDirection: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 12,
+      marginTop: 12,
+    },
     priceInput: {
       flex: 0.4,
       height: 38,
@@ -289,7 +333,7 @@ const getStyles = (isDarkMode: boolean) =>
       borderColor: isDarkMode ? '#555' : '#ccc',
       borderWidth: 1,
       borderRadius: 6,
-       backgroundColor: isDarkMode ? '#2c2c2e' : '#fff',
+      backgroundColor: isDarkMode ? '#2c2c2e' : '#fff',
       color: isDarkMode ? '#fff' : '#000',
     },
     paginationContainer: {

@@ -12,7 +12,8 @@ export default function LocationPickerScreen() {
     longitude: number;
   } | null>(null);
 
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'LocationPicker'>>();
 
   const handleLongPress = (event: LongPressEvent) => {
@@ -22,23 +23,20 @@ export default function LocationPickerScreen() {
 
   const confirmLocation = () => {
     if (!selectedLocation) {
-      Alert.alert('No location selected', 'Please long-press on the map to pick a location.');
+      Alert.alert(
+        'No location selected',
+        'Please long-press on the map to pick a location.',
+      );
       return;
     }
 
-    if (route.params.from === 'EditProduct') {
-      navigation.goBack();
-      setTimeout(() => {
-        navigation.navigate('EditProduct', {
-          productId: route.params.productId!,
-          location: selectedLocation,
-        });
-      }, 0);
-    } else {
-      navigation.navigate('AddProduct', {
-        location: selectedLocation,
-      });
-    }
+    // Pass selected location back by setting it in params
+    navigation.setParams({
+      location: selectedLocation,
+    });
+
+    // Return to the previous screen (AddProduct or EditProduct)
+    navigation.goBack();
   };
 
   return (

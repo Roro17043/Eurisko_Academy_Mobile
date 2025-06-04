@@ -201,9 +201,20 @@ export default function AddProductScreen() {
         text1: 'Success',
         text2: 'Product uploaded successfully!',
       });
-      reset();
-      setImages([]);
-      setSelectedLocation(null);
+
+      setTimeout(() => {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'TabViews', // 👈 name of your stack screen that renders the tab navigator
+              params: {
+                screen: 'Home', // 👈 name of the tab that shows ProductsScreen
+              },
+            },
+          ],
+        });
+      }, 500); // slight delay to let toast show
     } catch (error: any) {
       Toast.show({
         type: 'error',
