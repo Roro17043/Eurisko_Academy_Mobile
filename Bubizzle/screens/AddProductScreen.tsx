@@ -27,6 +27,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {RouteProp} from '@react-navigation/native';
 import {RootStackParamList} from '../navigation/RootParamNavigation';
 import FormScreenWrapper from '../components/FormScreenWrapper';
+import {reverseGeocode} from '../services/geocoding';
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -50,6 +51,7 @@ export default function AddProductScreen() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [locationName, setLocationName] = useState<string>('');
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
 
   const {
@@ -64,8 +66,13 @@ export default function AddProductScreen() {
 
   useEffect(() => {
     if (route.params?.location) {
-      setSelectedLocation(route.params.location);
-      setValue('location', route.params.location); // update form state
+      const loc = route.params.location;
+      setSelectedLocation(loc);
+      setValue('location', loc); // update form state
+
+      reverseGeocode(loc.latitude, loc.longitude).then(address => {
+        setLocationName(address); // 👈 set readable address
+      });
     }
   }, [route.params?.location]);
 
@@ -122,7 +129,9 @@ export default function AddProductScreen() {
 
   const pickImages = async () => {
     const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) {return;}
+    if (!hasPermission) {
+      return;
+    }
 
     const remainingSlots = 5 - images.length;
     launchImageLibrary(
@@ -282,10 +291,15 @@ export default function AddProductScreen() {
         }
       />
       {selectedLocation && (
-        <Text style={styles.coords}>
-          📍 Selected: {selectedLocation.latitude.toFixed(5)},{' '}
-          {selectedLocation.longitude.toFixed(5)}
-        </Text>
+        <>
+          <Text style={styles.coords}>
+            📍 Selected: {selectedLocation.latitude.toFixed(5)},{' '}
+            {selectedLocation.longitude.toFixed(5)}
+          </Text>
+          {locationName ? (
+            <Text style={styles.address}>{locationName}</Text>
+          ) : null}
+        </>
       )}
       {errors.location && (
         <Text style={styles.error}>
@@ -363,6 +377,12 @@ const getStyles = (isDark: boolean) =>
       fontSize: 13,
       color: isDark ? '#aaa' : '#555',
     },
+    address: {
+      marginTop: 4,
+      fontSize: 13,
+      color: isDark ? '#bbb' : '#333',
+    },
+
     imagePicker: {
       flexDirection: 'row',
       alignItems: 'center',
