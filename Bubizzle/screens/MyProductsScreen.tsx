@@ -18,8 +18,8 @@ import api from '../services/api';
 import { useThemedToast } from '../services/ShowToast';
 import ListScreenWrapper from '../components/ListScreenWrapper';
 import { reverseGeocode } from '../services/geocoding';
+import { IMAGE_BASE_URL } from '@env';
 
-const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
 export default function MyProductsScreen() {
   const { isDarkMode } = useTheme();

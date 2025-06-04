@@ -27,8 +27,9 @@ import { reverseGeocode } from '../services/geocoding';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../storage/RTKstore/slices/cartSlice';
 import Animated, { SlideInUp } from 'react-native-reanimated';
+import { IMAGE_BASE_URL } from '@env';
 
-const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
+
 type ProductDetailsRouteProp = RouteProp<RootStackParamList, 'ProductDetails'>;
 
 export default function ProductDetailsScreen() {

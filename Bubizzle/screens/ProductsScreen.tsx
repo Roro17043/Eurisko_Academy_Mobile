@@ -18,10 +18,8 @@ import AppButton from '../components/AppButton';
 import AppTextInput from '../components/AppTextInput';
 import ListScreenWrapper from '../components/ListScreenWrapper';
 import ProductSkeleton from '../components/ProductSkeleton';
+import { IMAGE_BASE_URL } from '@env';
 
-
-
-const IMAGE_BASE_URL = 'https://backend-practice.eurisko.me';
 
 export type Product = {
   _id: string;
