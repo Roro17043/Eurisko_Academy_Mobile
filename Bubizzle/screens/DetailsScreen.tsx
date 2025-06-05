@@ -13,32 +13,35 @@ import {
   Linking,
   Platform,
   PermissionsAndroid,
+  Alert,
 } from 'react-native';
-import { useRoute, RouteProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/AppText';
 import api from '../services/api';
 import RNFS from 'react-native-fs';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootParamNavigation';
 import MapView, { Marker } from 'react-native-maps';
 import ListScreenWrapper from '../components/ListScreenWrapper';
 import { reverseGeocode } from '../services/geocoding';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../storage/RTKstore/slices/cartSlice';
 import Animated, { SlideInUp } from 'react-native-reanimated';
+import { RootState } from '../storage/RTKstore';
 import { IMAGE_BASE_URL } from '@env';
-
 
 type ProductDetailsRouteProp = RouteProp<RootStackParamList, 'ProductDetails'>;
 
 export default function ProductDetailsScreen() {
   const route = useRoute<ProductDetailsRouteProp>();
   const { productId } = route.params;
-  console.log('Product ID:', productId);
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const dispatch = useDispatch();
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProductDetails'>;
+const navigation = useNavigation<NavigationProp>();
   const themeStyles = getStyles(isDarkMode);
 
   const [product, setProduct] = useState<any>(null);
@@ -46,6 +49,9 @@ export default function ProductDetailsScreen() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isOwner = user?.id === product?.user?._id;
 
   useEffect(() => {
     const fetch = async () => {
@@ -94,12 +100,38 @@ export default function ProductDetailsScreen() {
     }
   };
 
-  if (loading) {return <ActivityIndicator style={themeStyles.loadingContainer} size="large" />;}
-  if (error || !product) {return (
-    <ListScreenWrapper>
-      <Text style={themeStyles.errorText}>{error || 'No product found'}</Text>
-    </ListScreenWrapper>
-  );}
+  const handleEdit = () => {
+    navigation.navigate('EditProduct', { productId: product._id, from: 'ProductDetails' });
+    // Pass the current location if available
+  };
+
+  const handleDelete = async () => {
+    Alert.alert('Delete Product', 'Are you sure you want to delete this product?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await api.delete(`/products/${product._id}`);
+            ToastAndroid.show('✅ Product deleted', ToastAndroid.SHORT);
+            navigation.goBack();
+          } catch {
+            ToastAndroid.show('❌ Failed to delete product', ToastAndroid.SHORT);
+          }
+        },
+      },
+    ]);
+  };
+
+  if (loading) {return <ActivityIndicator style={themeStyles.loadingContainer} size="large" color={isDarkMode ? '#ffffff' : '#000000'}/>;}
+  if (error || !product) {
+    return (
+      <ListScreenWrapper>
+        <Text style={themeStyles.errorText}>{error || 'No product found'}</Text>
+      </ListScreenWrapper>
+    );
+  }
 
   return (
     <ListScreenWrapper>
@@ -157,6 +189,17 @@ export default function ProductDetailsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {isOwner && (
+          <View style={themeStyles.ownerButtons}>
+            <TouchableOpacity style={[themeStyles.ownerBtn, themeStyles.edit]} onPress={handleEdit}>
+              <Text style={themeStyles.ownerBtnText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[themeStyles.ownerBtn, themeStyles.delete]} onPress={handleDelete}>
+              <Text style={themeStyles.ownerBtnText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={themeStyles.footerSection}>
           {locationName ? <AppText style={themeStyles.locationText}>📍 {locationName}</AppText> : null}
@@ -277,10 +320,35 @@ const getStyles = (isDarkMode: boolean) => StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: isDarkMode ? '#1c1c1e' : '#fff',
   },
   errorText: {
     color: 'red',
     textAlign: 'center',
     marginTop: 20,
+  },
+  ownerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 20,
+    gap: 10,
+  },
+  ownerBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  edit: {
+    backgroundColor: '#ffb300',
+  },
+  delete: {
+    backgroundColor: '#d32f2f',
+  },
+  ownerBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
   },
 });

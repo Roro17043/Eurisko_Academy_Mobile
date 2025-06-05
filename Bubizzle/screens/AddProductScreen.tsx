@@ -1,9 +1,8 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
   TextInput,
-  Button,
   StyleSheet,
   ScrollView,
   Image,
@@ -11,6 +10,8 @@ import {
   Platform,
   PermissionsAndroid,
   Alert,
+  KeyboardAvoidingView,
+  Button,
 } from 'react-native';
 import {useForm, Controller} from 'react-hook-form';
 import {z} from 'zod';
@@ -18,7 +19,7 @@ import {zodResolver} from '@hookform/resolvers/zod';
 import Toast from 'react-native-toast-message';
 import api from '../services/api';
 import {useTheme} from '../context/ThemeContext';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {RootState} from '../storage/RTKstore';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -28,50 +29,56 @@ import type {RouteProp} from '@react-navigation/native';
 import {RootStackParamList} from '../navigation/RootParamNavigation';
 import FormScreenWrapper from '../components/FormScreenWrapper';
 import {reverseGeocode} from '../services/geocoding';
+import mime from 'mime';
+import {
+  updateField,
+  resetAddProduct,
+} from '../storage/RTKstore/slices/addProductSlice';
+
+type FormDataType = z.infer<typeof schema>;
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  price: z.coerce.number().positive('Price must be a valid number'),
+  price: z.string().refine(val => !isNaN(Number(val)) && Number(val) > 0, {
+    message: 'Price must be a valid number',
+  }),
   location: z.any().refine(val => val && val.latitude && val.longitude, {
     message: 'Location is required',
   }),
 });
 
-type FormDataType = z.infer<typeof schema>;
-
 export default function AddProductScreen() {
   const {isDarkMode} = useTheme();
+  const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.auth.accessToken);
+  const product = useSelector((state: RootState) => state.addProduct);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'AddProduct'>>();
-  const [images, setImages] = useState<any[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [locationName, setLocationName] = useState<string>('');
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
 
   const {
     control,
     handleSubmit,
     formState: {errors},
-    reset,
     setValue,
   } = useForm<FormDataType>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      title: product.title,
+      description: product.description,
+      price: product.price, // 🔁 Fixes undefined
+      location: product.location,
+    },
   });
 
   useEffect(() => {
     if (route.params?.location) {
       const loc = route.params.location;
-      setSelectedLocation(loc);
-      setValue('location', loc); // update form state
-
+      dispatch(updateField({key: 'location', value: loc}));
+      setValue('location', loc);
       reverseGeocode(loc.latitude, loc.longitude).then(address => {
-        setLocationName(address); // 👈 set readable address
+        dispatch(updateField({key: 'locationName', value: address}));
       });
     }
   }, [route.params?.location]);
@@ -80,11 +87,6 @@ export default function AddProductScreen() {
     if (Platform.OS === 'android') {
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
-        {
-          title: 'Gallery Access Permission',
-          message: 'App needs access to your gallery',
-          buttonPositive: 'OK',
-        },
       );
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     }
@@ -92,110 +94,87 @@ export default function AddProductScreen() {
   };
 
   const takePhoto = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-        {
-          title: 'Camera Permission',
-          message: 'App needs access to your camera',
-          buttonPositive: 'OK',
-        },
-      );
-      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-        Toast.show({
-          type: 'error',
-          text1: 'Permission Denied',
-          text2: 'Camera permission is required.',
-        });
+    const permission = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+    );
+    if (permission !== PermissionsAndroid.RESULTS.GRANTED) {
+      Toast.show({type: 'error', text1: 'Camera permission denied'});
+      return;
+    }
+    launchCamera({mediaType: 'photo', saveToPhotos: true}, response => {
+      if (
+        response.didCancel ||
+        response.errorCode ||
+        !response.assets?.length
+      ) {
         return;
       }
-    }
 
-    launchCamera({mediaType: 'photo', saveToPhotos: true}, response => {
-      if (response.assets && response.assets.length > 0) {
-        const newImage = response.assets[0];
-        if (images.length >= 5) {
-          Toast.show({
-            type: 'error',
-            text1: 'Limit Reached',
-            text2: 'You can only upload up to 5 images.',
-          });
-          return;
-        }
-        setImages(prev => [...prev, newImage]);
+      const image = response.assets[0];
+      const uri = image.uri;
+
+      if (uri) {
+        dispatch(
+          updateField({
+            key: 'images',
+            value: [...product.images, uri],
+          }),
+        );
       }
     });
   };
 
   const pickImages = async () => {
-    const hasPermission = await requestGalleryPermission();
-    if (!hasPermission) {
-      return;
-    }
-
-    const remainingSlots = 5 - images.length;
+    if (!(await requestGalleryPermission())) return;
+    const remaining = 5 - product.images.length;
     launchImageLibrary(
-      {
-        mediaType: 'photo',
-        selectionLimit: remainingSlots,
-      },
+      {mediaType: 'photo', selectionLimit: remaining},
       response => {
-        if (response.assets && response.assets.length > 0) {
-          const selected = response.assets.slice(0, remainingSlots);
-          setImages(prev => [...prev, ...selected]);
+        if (response.assets?.length) {
+          const uris = response.assets
+            .map(img => img.uri)
+            .filter((uri): uri is string => typeof uri === 'string');
+          dispatch(
+            updateField({
+              key: 'images',
+              value: [...product.images, ...uris],
+            }),
+          );
         }
       },
     );
   };
 
   const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+    const updated = [...product.images];
+    updated.splice(index, 1);
+    dispatch(updateField({key: 'images', value: updated}));
   };
 
-  const onSubmit = async (data: FormDataType) => {
-    if (!token) {
-      Alert.alert('Authentication Error', 'You must be logged in.');
-      return;
-    }
+  const onSubmit = async (data: any) => {
+    if (!token) return Alert.alert('You must be logged in.');
 
     const formData = new FormData();
     formData.append('title', data.title);
     formData.append('description', data.description);
-    formData.append('price', data.price);
+    formData.append('price', Number(data.price));
     formData.append(
       'location',
       JSON.stringify({
-        name: 'LatLng',
-        latitude: data.location.latitude,
-        longitude: data.location.longitude,
+        name: product.locationName || 'LatLng',
+        ...data.location,
       }),
     );
 
-    let skippedImages = 0;
-    images.forEach((image, index) => {
-      const type = image.type || 'image/jpeg';
-      if (!allowedTypes.includes(type)) {
-        skippedImages++;
-        return;
-      }
-
+    product.images.forEach((uri, index) => {
+      const cleanedUri =
+        Platform.OS === 'android' ? uri : uri.replace('file://', '');
       formData.append('images', {
-        uri:
-          Platform.OS === 'android'
-            ? image.uri
-            : image.uri.replace('file://', ''),
-        type,
-        name: image.fileName || `image_${index}_${Date.now()}.jpg`,
+        uri: cleanedUri,
+        type: mime.getType(uri) || 'image/jpeg',
+        name: `image_${index}_${Date.now()}.jpg`,
       });
     });
-
-    if (skippedImages > 0) {
-      Toast.show({
-        type: 'error',
-        text1: 'Unsupported Image Format',
-        text2: `Skipped ${skippedImages} image(s). Only JPG and PNG are allowed.`,
-      });
-    }
 
     try {
       await api.post('/products', formData, {
@@ -204,31 +183,17 @@ export default function AddProductScreen() {
           'Content-Type': 'multipart/form-data',
         },
       });
-
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Product uploaded successfully!',
+      Toast.show({type: 'success', text1: 'Product uploaded successfully'});
+      dispatch(resetAddProduct());
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'TabViews', params: {screen: 'Home'}}],
       });
-
-      setTimeout(() => {
-        navigation.reset({
-          index: 0,
-          routes: [
-            {
-              name: 'TabViews', // 👈 name of your stack screen that renders the tab navigator
-              params: {
-                screen: 'Home', // 👈 name of the tab that shows ProductsScreen
-              },
-            },
-          ],
-        });
-      }, 500); // slight delay to let toast show
-    } catch (error: any) {
+    } catch (err: any) {
       Toast.show({
         type: 'error',
         text1: 'Upload Failed',
-        text2: error?.response?.data?.message || 'Unexpected error.',
+        text2: err?.response?.data?.message || 'Unexpected error',
       });
     }
   };
@@ -237,108 +202,118 @@ export default function AddProductScreen() {
 
   return (
     <FormScreenWrapper>
-      <Text style={styles.label}>Title</Text>
-      <Controller
-        control={control}
-        name="title"
-        render={({field: {onChange, value}}) => (
-          <TextInput
-            style={styles.input}
-            value={value}
-            onChangeText={onChange}
+      <KeyboardAvoidingView behavior="padding">
+        <ScrollView contentContainerStyle={styles.container}>
+          <Text style={styles.label}>Title</Text>
+          <Controller
+            control={control}
+            name="title"
+            render={({field: {onChange, value}}) => (
+              <TextInput
+                style={styles.input}
+                value={value}
+                onChangeText={val => {
+                  onChange(val);
+                  dispatch(updateField({key: 'title', value: val}));
+                }}
+              />
+            )}
           />
-        )}
-      />
-      {errors.title && <Text style={styles.error}>{errors.title.message}</Text>}
+          {errors.title && (
+            <Text style={styles.error}>{errors.title.message}</Text>
+          )}
 
-      <Text style={styles.label}>Description</Text>
-      <Controller
-        control={control}
-        name="description"
-        render={({field: {onChange, value}}) => (
-          <TextInput
-            style={styles.input}
-            value={value}
-            onChangeText={onChange}
-            multiline
+          <Text style={styles.label}>Description</Text>
+          <Controller
+            control={control}
+            name="description"
+            render={({field: {onChange, value}}) => (
+              <TextInput
+                style={styles.input}
+                value={value}
+                multiline
+                onChangeText={val => {
+                  onChange(val);
+                  dispatch(updateField({key: 'description', value: val}));
+                }}
+              />
+            )}
           />
-        )}
-      />
-      {errors.description && (
-        <Text style={styles.error}>{errors.description.message}</Text>
-      )}
+          {errors.description && (
+            <Text style={styles.error}>{errors.description.message}</Text>
+          )}
 
-      <Text style={styles.label}>Price</Text>
-      <Controller
-        control={control}
-        name="price"
-        render={({field: {onChange, value}}) => (
-          <TextInput
-            style={styles.input}
-            value={value?.toString()}
-            onChangeText={onChange}
-            keyboardType="numeric"
+          <Text style={styles.label}>Price</Text>
+          <Controller
+            control={control}
+            name="price"
+            render={({field: {onChange, value}}) => (
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                value={value}
+                onChangeText={val => {
+                  onChange(val);
+                  dispatch(updateField({key: 'price', value: val}));
+                }}
+              />
+            )}
           />
-        )}
-      />
-      {errors.price && <Text style={styles.error}>{errors.price.message}</Text>}
 
-      <Text style={styles.label}>Location</Text>
-      <Button
-        title="Pick Location on Map"
-        onPress={() =>
-          navigation.navigate('LocationPicker', {from: 'AddProduct'})
-        }
-      />
-      {selectedLocation && (
-        <>
-          <Text style={styles.coords}>
-            📍 Selected: {selectedLocation.latitude.toFixed(5)},{' '}
-            {selectedLocation.longitude.toFixed(5)}
-          </Text>
-          {locationName ? (
-            <Text style={styles.address}>{locationName}</Text>
-          ) : null}
-        </>
-      )}
-      {errors.location && (
-        <Text style={styles.error}>
-          {(errors.location as {message?: string})?.message}
-        </Text>
-      )}
-
-      <View style={styles.rowCenter}>
-        <TouchableOpacity onPress={pickImages} style={styles.imagePicker}>
-          <View style={styles.rowAlignCenter}>
-            <Ionicons name="image-outline" size={20} color="#fff" />
-            <Text style={styles.imagePickerText}>Pick Image</Text>
+          {errors.price && (
+            <Text style={styles.error}>{errors.price.message}</Text>
+          )}
+          <View style={styles.rowCenter}>
+            <Button
+              title="Pick Location on Map"
+              onPress={() =>
+                navigation.navigate('LocationPicker', {from: 'AddProduct'})
+              }
+            />
           </View>
-        </TouchableOpacity>
 
-        <TouchableOpacity onPress={takePhoto} style={styles.imagePicker}>
-          <View style={styles.rowAlignCenter}>
-            <Ionicons name="camera" size={20} color="#fff" />
-            <Text style={styles.imagePickerText}>Take Photo</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+          {product.location && (
+            <Text style={styles.coords}>
+              📍 {product.location.latitude.toFixed(5)},{' '}
+              {product.location.longitude.toFixed(5)}
+            </Text>
+          )}
 
-      <Text style={styles.imageNote}>You can upload up to 5 images only.</Text>
+          {errors.location && (
+            <Text style={styles.error}>
+              {errors.location.message?.toString()}
+            </Text>
+          )}
 
-      <ScrollView horizontal>
-        {images.map((img, idx) => (
-          <View key={idx} style={styles.imageWrapper}>
-            <Image source={{uri: img.uri}} style={styles.image} />
-            <TouchableOpacity
-              style={styles.removeButton}
-              onPress={() => removeImage(idx)}>
-              <Text style={styles.removeText}>✕</Text>
+          <View style={styles.rowCenter}>
+            <TouchableOpacity onPress={pickImages} style={styles.imagePicker}>
+              <Ionicons name="image-outline" size={20} color="#fff" />
+              <Text style={styles.imagePickerText}>Pick Image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={takePhoto} style={styles.imagePicker}>
+              <Ionicons name="camera" size={20} color="#fff" />
+              <Text style={styles.imagePickerText}>Take Photo</Text>
             </TouchableOpacity>
           </View>
-        ))}
-      </ScrollView>
 
-      <Button title="Submit" onPress={handleSubmit(onSubmit)} />
+          <ScrollView horizontal>
+            {product.images.map((uri, idx) => (
+              <View key={idx} style={styles.imageWrapper}>
+                <Image source={{uri}} style={styles.image} />
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => removeImage(idx)}>
+                  <Text style={styles.removeText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+
+          <View style={styles.submitButton}>
+            <Button title="Submit" onPress={handleSubmit(onSubmit)} />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </FormScreenWrapper>
   );
 }
@@ -346,15 +321,13 @@ export default function AddProductScreen() {
 const getStyles = (isDark: boolean) =>
   StyleSheet.create({
     container: {
-      flex: 1,
-      padding: 20,
-      paddingTop: 40,
-      backgroundColor: isDark ? '#121212' : '#fafafa',
+      paddingBottom: 120,
+      paddingHorizontal: 20,
     },
     label: {
       fontSize: 15,
       fontWeight: '600',
-      marginBottom: 6,
+      marginBottom: 8,
       marginTop: 16,
       color: isDark ? '#f2f2f2' : '#111',
     },
@@ -377,12 +350,6 @@ const getStyles = (isDark: boolean) =>
       fontSize: 13,
       color: isDark ? '#aaa' : '#555',
     },
-    address: {
-      marginTop: 4,
-      fontSize: 13,
-      color: isDark ? '#bbb' : '#333',
-    },
-
     imagePicker: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -390,27 +357,17 @@ const getStyles = (isDark: boolean) =>
       paddingHorizontal: 16,
       backgroundColor: '#007bff',
       borderRadius: 10,
-      marginHorizontal: 6,
+      margin: 6,
     },
     imagePickerText: {
       color: '#fff',
       marginLeft: 8,
       fontWeight: '500',
     },
-    rowAlignCenter: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
     rowCenter: {
       flexDirection: 'row',
       justifyContent: 'center',
       marginTop: 16,
-    },
-    imageNote: {
-      fontSize: 12,
-      color: '#888',
-      marginTop: 8,
-      textAlign: 'center',
     },
     imageWrapper: {
       position: 'relative',
@@ -432,12 +389,14 @@ const getStyles = (isDark: boolean) =>
       height: 24,
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1,
-      elevation: 2,
     },
     removeText: {
       color: '#fff',
       fontSize: 14,
       fontWeight: 'bold',
+    },
+    submitButton: {
+      marginTop: 30,
+      marginBottom: 60,
     },
   });

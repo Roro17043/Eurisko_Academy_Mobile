@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -9,9 +9,9 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../storage/RTKstore';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import AppText from '../components/AppText';
 import { useTheme } from '../context/ThemeContext';
 import api from '../services/api';
@@ -19,12 +19,13 @@ import { useThemedToast } from '../services/ShowToast';
 import ListScreenWrapper from '../components/ListScreenWrapper';
 import { reverseGeocode } from '../services/geocoding';
 import { IMAGE_BASE_URL } from '@env';
-
+import { setAllFields } from '../storage/RTKstore/slices/editProductSlice';
 
 export default function MyProductsScreen() {
   const { isDarkMode } = useTheme();
   const styles = getStyles(isDarkMode);
   const navigation = useNavigation<any>();
+  const dispatch = useDispatch();
 
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
   const userId = useSelector((state: RootState) => state.auth.user?.id);
@@ -35,6 +36,8 @@ export default function MyProductsScreen() {
   const [locations, setLocations] = useState<Record<string, string>>({});
 
   const fetchMyProducts = useCallback(async () => {
+    if (!accessToken || !userId) return;
+
     try {
       setLoading(true);
       let page = 1;
@@ -44,16 +47,19 @@ export default function MyProductsScreen() {
       while (hasNext) {
         const res = await api.get('/products', {
           headers: { Authorization: `Bearer ${accessToken}` },
-          params: { page, limit: 10 },
+          params: { page, limit: 100 },
         });
 
-        const data = res.data.data || [];
+        const data = Array.isArray(res.data.data) ? res.data.data : [];
         allProducts = [...allProducts, ...data];
         hasNext = res.data.pagination?.hasNextPage;
         page += 1;
       }
 
-      const filtered = allProducts.filter((product: any) => product.user?._id === userId);
+      const filtered = allProducts.filter(
+        (product: any) => product.user?._id?.toString() === userId?.toString()
+      );
+
       setMyProducts(filtered);
 
       const newLocations: Record<string, string> = {};
@@ -61,11 +67,14 @@ export default function MyProductsScreen() {
         filtered.map(async product => {
           const { latitude, longitude } = product.location ?? {};
           if (latitude && longitude) {
-            const address = await reverseGeocode(latitude, longitude);
-            newLocations[product._id] = address;
+            try {
+              const address = await reverseGeocode(latitude, longitude);
+              newLocations[product._id] = address;
+            } catch {}
           }
         })
       );
+
       setLocations(newLocations);
     } catch (err: any) {
       const message =
@@ -76,11 +85,9 @@ export default function MyProductsScreen() {
     }
   }, [accessToken, userId, showErrorToast]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchMyProducts();
-    }, [fetchMyProducts])
-  );
+  useEffect(() => {
+    fetchMyProducts();
+  }, []);
 
   const deleteProduct = async (productId: string) => {
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this product?', [
@@ -136,7 +143,23 @@ export default function MyProductsScreen() {
                 <View style={styles.actions}>
                   <TouchableOpacity
                     style={styles.edit}
-                    onPress={() => navigation.navigate('EditProduct', { productId: item._id })}
+                    onPress={() => {
+                      dispatch(
+                        setAllFields({
+                          productId: item._id,
+                          title: item.title,
+                          description: item.description,
+                          price: String(item.price),
+                          location: item.location,
+                          locationName: item.location?.name || '',
+                          images: item.images.map((img: any) => img.url),
+                        })
+                      );
+                      navigation.navigate('EditProduct', {
+                        productId: item._id,
+                        from: 'MyProducts',
+                      });
+                    }}
                   >
                     <AppText style={styles.btnText}>Edit</AppText>
                   </TouchableOpacity>

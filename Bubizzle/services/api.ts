@@ -5,7 +5,7 @@ import { saveTokens, removeTokens } from '../storage/tokenStorage';
 
 const api = axios.create({
   baseURL: 'https://backend-practice.eurisko.me/api',
-  timeout: 20000,
+  timeout: 100000,
 });
 
 api.interceptors.request.use(

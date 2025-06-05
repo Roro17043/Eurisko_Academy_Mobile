@@ -5,6 +5,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../navigation/RootParamNavigation';
+import { useDispatch } from 'react-redux';
+import { updateField } from '../storage/RTKstore/slices/editProductSlice';
 
 export default function LocationPickerScreen() {
   const [selectedLocation, setSelectedLocation] = useState<{
@@ -14,6 +16,7 @@ export default function LocationPickerScreen() {
 
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'LocationPicker'>>();
+  const dispatch = useDispatch();
 
   const handleLongPress = (event: LongPressEvent) => {
     const { latitude, longitude } = event.nativeEvent.coordinate;
@@ -28,13 +31,12 @@ export default function LocationPickerScreen() {
 
     const fromScreen = route.params?.from;
 
-    if (fromScreen === 'AddProduct') {
+    if (fromScreen === 'EditProduct') {
+      dispatch(updateField({ key: 'location', value: selectedLocation }));
+      navigation.navigate('EditProduct', { productId: route.params.productId });
+    } else if (fromScreen === 'AddProduct') {
+      // Future proofing: update AddProduct slice if needed
       navigation.navigate('AddProduct', { location: selectedLocation });
-    } else if (fromScreen === 'EditProduct') {
-      navigation.navigate('EditProduct', {
-        productId: route.params.productId, // preserve productId if passed
-        location: selectedLocation,
-      });
     } else {
       navigation.goBack();
     }

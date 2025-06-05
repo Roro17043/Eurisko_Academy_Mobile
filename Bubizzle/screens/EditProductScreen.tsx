@@ -1,15 +1,21 @@
-import React, {useEffect, useState} from 'react';
-import {View, StyleSheet, ActivityIndicator, Alert, Text} from 'react-native';
-import {useRoute, useNavigation} from '@react-navigation/native';
-import {useForm, Controller} from 'react-hook-form';
-import {z} from 'zod';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {useSelector} from 'react-redux';
-import {RootState} from '../storage/RTKstore';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator, Alert, Text } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../storage/RTKstore';
 import AppTextInput from '../components/AppTextInput';
 import AppButton from '../components/AppButton';
 import api from '../services/api';
 import FormScreenWrapper from '../components/FormScreenWrapper';
+import {
+  setAllFields,
+  updateField,
+  resetEditProduct,
+} from '../storage/RTKstore/slices/editProductSlice';
+import { reverseGeocode } from '../services/geocoding';
 
 const schema = z.object({
   title: z.string().min(1),
@@ -18,7 +24,6 @@ const schema = z.object({
   location: z.any().refine(val => val && val.latitude && val.longitude, {
     message: 'Location is required',
   }),
-  locationName: z.string().min(1, 'Location name is required'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -28,59 +33,71 @@ export default function EditProductScreen() {
   const navigation = useNavigation<any>();
   const productId = route.params?.productId;
 
+  const dispatch = useDispatch();
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
+  const productState = useSelector((state: RootState) => state.editProduct);
 
   const [loading, setLoading] = useState(true);
-  const [initialData, setInitialData] = useState<FormData | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const {
     control,
     handleSubmit,
     reset,
-    formState: {errors},
+    formState: { errors },
     setValue,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   useEffect(() => {
+    if (productState.productId === productId) {
+      reset(productState);
+      setSelectedLocation(productState.location);
+      setLoading(false);
+      return;
+    }
+
     const fetchProduct = async () => {
       try {
         const res = await api.get(`/products/${productId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         const p = res.data.data;
         const formatted = {
+          productId,
           title: p.title,
           description: p.description,
-          price: p.price,
+          price: String(p.price),
           location: p.location,
           locationName: p.location?.name || '',
+          images: p.images.map((img: any) => img.url),
         };
-        setInitialData(formatted);
-        setSelectedLocation(p.location);
+        dispatch(setAllFields(formatted));
         reset(formatted);
+        setSelectedLocation(p.location);
       } catch (err) {
         Alert.alert('Error', 'Could not load product');
       } finally {
         setLoading(false);
       }
     };
+
     fetchProduct();
-  }, [productId, reset, accessToken]);
+  }, [productId]);
 
   useEffect(() => {
     if (route.params?.location) {
-      setSelectedLocation(route.params.location);
-      setValue('location', route.params.location);
+      const loc = route.params.location;
+      setSelectedLocation(loc);
+      setValue('location', loc);
+      dispatch(updateField({ key: 'location', value: loc }));
+
+      reverseGeocode(loc.latitude, loc.longitude).then(address => {
+        dispatch(updateField({ key: 'locationName', value: address }));
+      });
     }
-  }, [route.params?.location, setValue]);
+  }, [route.params?.location]);
 
   const onSubmit = async (formData: FormData) => {
     if (!selectedLocation) {
@@ -91,7 +108,7 @@ export default function EditProductScreen() {
     const updatedData = {
       ...formData,
       location: {
-        name: formData.locationName,
+        name: productState.locationName,
         latitude: selectedLocation.latitude,
         longitude: selectedLocation.longitude,
       },
@@ -99,19 +116,25 @@ export default function EditProductScreen() {
 
     try {
       await api.put(`/products/${productId}`, updatedData, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       Alert.alert('Success', 'Product updated');
-      navigation.goBack();
+      dispatch(resetEditProduct());
+
+      if (route.params?.from === 'MyProducts') {
+        navigation.reset({ index: 0, routes: [{ name: 'TabViews' }] });
+      } else if (route.params?.from === 'Details') {
+        navigation.reset({ index: 0, routes: [{ name: 'ProductDetails', params: { productId } }] });
+      } else {
+        navigation.reset({ index: 0, routes: [{ name: 'TabViews' }] });
+      }
     } catch (err) {
       Alert.alert('Error', 'Update failed');
     }
   };
 
-  if (loading || !initialData) {
+  if (loading) {
     return <ActivityIndicator style={styles.loading} size="large" />;
   }
 
@@ -121,22 +144,28 @@ export default function EditProductScreen() {
         <Controller
           control={control}
           name="title"
-          render={({field: {onChange, value}}) => (
+          render={({ field: { onChange, value } }) => (
             <AppTextInput
               placeholder="Title"
               value={value}
-              onChangeText={onChange}
+              onChangeText={(val) => {
+                onChange(val);
+                dispatch(updateField({ key: 'title', value: val }));
+              }}
             />
           )}
         />
         <Controller
           control={control}
           name="description"
-          render={({field: {onChange, value}}) => (
+          render={({ field: { onChange, value } }) => (
             <AppTextInput
               placeholder="Description"
               value={value}
-              onChangeText={onChange}
+              onChangeText={(val) => {
+                onChange(val);
+                dispatch(updateField({ key: 'description', value: val }));
+              }}
               multiline
             />
           )}
@@ -144,29 +173,18 @@ export default function EditProductScreen() {
         <Controller
           control={control}
           name="price"
-          render={({field: {onChange, value}}) => (
+          render={({ field: { onChange, value } }) => (
             <AppTextInput
               placeholder="Price"
               value={String(value)}
-              onChangeText={onChange}
+              onChangeText={(val) => {
+                onChange(val);
+                dispatch(updateField({ key: 'price', value: val }));
+              }}
               keyboardType="numeric"
             />
           )}
         />
-        <Controller
-          control={control}
-          name="locationName"
-          render={({field: {onChange, value}}) => (
-            <AppTextInput
-              placeholder="Location Name"
-              value={value}
-              onChangeText={onChange}
-            />
-          )}
-        />
-        {errors.locationName && (
-          <Text style={styles.errorText}>{errors.locationName.message}</Text>
-        )}
 
         <AppButton
           title="Pick New Location"
@@ -183,6 +201,10 @@ export default function EditProductScreen() {
             📍 {selectedLocation.latitude.toFixed(5)}, {selectedLocation.longitude.toFixed(5)}
           </Text>
         )}
+
+        {productState.locationName ? (
+          <Text style={styles.locationName}>🏷️ {productState.locationName}</Text>
+        ) : null}
 
         <AppButton title="Save Changes" onPress={handleSubmit(onSubmit)} />
       </View>
@@ -208,5 +230,10 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     fontSize: 14,
     color: '#555',
+  },
+  locationName: {
+    marginBottom: 14,
+    fontSize: 14,
+    color: '#666',
   },
 });
