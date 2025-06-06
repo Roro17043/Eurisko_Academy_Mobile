@@ -19,6 +19,17 @@ import LocationPickerScreen from '../screens/LocationPickerScreen';
 
 const Stack = createNativeStackNavigator();
 
+// ✅ Deep linking config
+const linking = {
+  prefixes: ['myapp://'], // or your custom domain/app scheme
+  config: {
+    screens: {
+      ProductDetails: 'product/:productId',
+      // Add more screens if needed
+    },
+  },
+};
+
 export default function RootNavigator() {
   const isLoggedIn = useSelector((state: RootState) => state.auth.isLoggedIn);
   const rehydrated = useSelector((state: RootState) => state._persist?.rehydrated);
@@ -28,7 +39,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isLoggedIn ? (
           <>

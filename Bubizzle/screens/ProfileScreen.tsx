@@ -18,6 +18,11 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/RootParamNavigation';
 import api from '../services/api';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  SlideInUp,
+} from 'react-native-reanimated';
 
 export default function ProfileScreen() {
   const { isDarkMode } = useTheme();
@@ -28,7 +33,6 @@ export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Track if profile needs re-fetching
   const shouldRefetchRef = useRef(true);
 
   const fetchProfile = useCallback(async () => {
@@ -36,7 +40,7 @@ export default function ProfileScreen() {
     try {
       const response = await api.get('/user/profile');
       setUser(response.data.data.user);
-      shouldRefetchRef.current = false; // mark as up-to-date
+      shouldRefetchRef.current = false;
     } catch (err) {
       ToastAndroid.show('Failed to fetch profile', ToastAndroid.SHORT);
     } finally {
@@ -56,8 +60,6 @@ export default function ProfileScreen() {
     dispatch(logout());
   };
 
-  
-
   return (
     <ListScreenWrapper>
       <View style={styles.container}>
@@ -69,11 +71,10 @@ export default function ProfileScreen() {
               navigation.navigate('EditProfile', {
                 user,
                 onUpdated: () => {
-                  shouldRefetchRef.current = true; // mark to re-fetch on return
+                  shouldRefetchRef.current = true;
                 },
               })
-            }
-          >
+            }>
             <Ionicons
               name="create-outline"
               size={18}
@@ -85,24 +86,32 @@ export default function ProfileScreen() {
         </View>
 
         {user?.profileImage?.url ? (
-          <Image source={{ uri: user.profileImage.url }} style={styles.avatar} />
+          <Animated.Image
+            entering={FadeIn.duration(600)}
+            source={{ uri: user.profileImage.url }}
+            style={styles.avatar}
+          />
         ) : (
-          <View style={styles.avatarPlaceholder}>
+          <Animated.View
+            entering={FadeIn.duration(600)}
+            style={styles.avatarPlaceholder}>
             <Ionicons
               name="person-circle-outline"
               size={100}
               color={isDarkMode ? '#888' : '#ccc'}
             />
-          </View>
+          </Animated.View>
         )}
 
-        <View style={styles.info}>
+        <Animated.View entering={FadeInDown.delay(200)} style={styles.info}>
           <ProfileField label="First Name" value={user?.firstName} isDarkMode={isDarkMode} />
           <ProfileField label="Last Name" value={user?.lastName} isDarkMode={isDarkMode} />
           <ProfileField label="Email" value={user?.email} isDarkMode={isDarkMode} />
-        </View>
+        </Animated.View>
 
-        <AppButton title="Logout" onPress={handleLogout} style={styles.logoutButton} />
+        <Animated.View entering={SlideInUp.delay(400)} style={{ width: '100%' }}>
+          <AppButton title="Logout" onPress={handleLogout} style={styles.logoutButton} />
+        </Animated.View>
       </View>
     </ListScreenWrapper>
   );
@@ -155,6 +164,16 @@ const getStyles = (isDarkMode: boolean) =>
       alignSelf: 'center',
       marginBottom: 30,
     },
+    avatarPlaceholder: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      justifyContent: 'center',
+      alignItems: 'center',
+      alignSelf: 'center',
+      marginBottom: 30,
+      backgroundColor: isDarkMode ? '#2c2c2e' : '#e0e0e0',
+    },
     info: {
       width: '100%',
       marginBottom: 20,
@@ -176,15 +195,5 @@ const getStyles = (isDarkMode: boolean) =>
     },
     logoutButton: {
       width: '100%',
-    },
-    avatarPlaceholder: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      justifyContent: 'center',
-      alignItems: 'center',
-      alignSelf: 'center',
-      marginBottom: 30,
-      backgroundColor: isDarkMode ? '#2c2c2e' : '#e0e0e0',
     },
   });

@@ -5,7 +5,7 @@ module.exports = {
   },
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   transformIgnorePatterns: [
-    'node_modules/(?!(jest-)?react-native|@react-native|@react-navigation|react-redux)',
+    'node_modules/(?!(jest-)?react-native|@react-native|@react-navigation|react-redux|mime)',
   ],
   moduleNameMapper: {
     '^@react-native-async-storage/async-storage$':

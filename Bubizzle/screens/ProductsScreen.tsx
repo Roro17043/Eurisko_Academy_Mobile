@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,30 +8,30 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import ProductCard from '../components/ProductCard';
-import {useNavigation} from '@react-navigation/native';
-import {useTheme} from '../context/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 import SearchBar from '../components/SearchBar';
-import {useSelector} from 'react-redux';
-import {RootState} from '../storage/RTKstore';
+import { useSelector } from 'react-redux';
+import { RootState } from '../storage/RTKstore';
 import api from '../services/api';
 import AppButton from '../components/AppButton';
 import AppTextInput from '../components/AppTextInput';
 import ListScreenWrapper from '../components/ListScreenWrapper';
 import ProductSkeleton from '../components/ProductSkeleton';
-import {IMAGE_BASE_URL} from '@env';
+import { IMAGE_BASE_URL } from '@env';
 
 export type Product = {
   _id: string;
   title: string;
   description: string;
   price: number;
-  images: {url: string}[];
+  images: { url: string }[];
 };
 
 export default function ProductScreen() {
   const navigation = useNavigation<any>();
-  const {isDarkMode} = useTheme();
-  const styles = getStyles(isDarkMode);
+  const { isDarkMode } = useTheme();
+  const styles = useMemo(() => getStyles(isDarkMode), [isDarkMode]);
   const accessToken = useSelector((state: RootState) => state.auth.accessToken);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -44,16 +44,17 @@ export default function ProductScreen() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
   const showSkeleton = loading && !refreshing && products.length === 0;
 
-  const fetchProducts = async (page = 1) => {
-    if (!refreshing) {setLoading(true);}
+  const fetchProducts = useCallback(async (page = 1) => {
+    if (!refreshing) setLoading(true);
     setError(null);
 
     try {
       const response = await api.get('/products', {
-        headers: {Authorization: `Bearer ${accessToken}`},
-        params: {page, limit: 10},
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: { page, limit: 10 },
       });
 
       if (response.data.success) {
@@ -70,74 +71,94 @@ export default function ProductScreen() {
         err?.message?.includes('status code 521') || statusCode === 521
           ? 'Failed to Get Products'
           : err?.message || 'Failed to fetch products';
-
       setError(errorMessage);
       setProducts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [accessToken, refreshing]);
 
-  const fetchSearchedProducts = async (
-    query: string,
-    min?: string,
-    max?: string,
-    order?: 'asc' | 'desc' | null,
-  ) => {
-    setLoading(true);
-    setError(null);
+  const fetchSearchedProducts = useCallback(
+    async (
+      query: string,
+      min?: string,
+      max?: string,
+      order?: 'asc' | 'desc' | null,
+    ) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await api.get('/products/search', {
-        headers: {Authorization: `Bearer ${accessToken}`},
-        params: {query},
-      });
+      try {
+        const response = await api.get('/products/search', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          params: { query },
+        });
 
-      let filtered = response.data.data;
-      const minVal = min ? Number(min) : null;
-      const maxVal = max ? Number(max) : null;
+        let filtered = response.data.data;
+        const minVal = min ? Number(min) : null;
+        const maxVal = max ? Number(max) : null;
 
-      filtered = filtered.filter((item: Product) => {
-        if (minVal !== null && item.price < minVal) {return false;}
-        if (maxVal !== null && item.price > maxVal) {return false;}
-        return true;
-      });
+        filtered = filtered.filter((item: Product) => {
+          if (minVal !== null && item.price < minVal) return false;
+          if (maxVal !== null && item.price > maxVal) return false;
+          return true;
+        });
 
-      if (order === 'asc') {
-        filtered.sort((a: Product, b: Product) => a.price - b.price);
-      } else if (order === 'desc') {
-        filtered.sort((a: Product, b: Product) => b.price - a.price);
+        if (order === 'asc') {
+          filtered.sort((a, b) => a.price - b.price);
+        } else if (order === 'desc') {
+          filtered.sort((a, b) => b.price - a.price);
+        }
+
+        setProducts(filtered);
+        setCurrentPage(1);
+        setTotalPages(1);
+      } catch (err: any) {
+        const statusCode = err?.response?.status;
+        const errorMessage =
+          err?.message?.includes('status code 521') || statusCode === 521
+            ? 'Failed to Get Products'
+            : err?.message || 'Failed to fetch products';
+        setError(errorMessage);
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
-
-      setProducts(filtered);
-      setCurrentPage(1);
-      setTotalPages(1);
-    } catch (err: any) {
-      const statusCode = err?.response?.status;
-      const errorMessage =
-        err?.message?.includes('status code 521') || statusCode === 521
-          ? 'Failed to Get Products'
-          : err?.message || 'Failed to fetch products';
-
-      setError(errorMessage);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [accessToken]
+  );
 
   useEffect(() => {
     fetchProducts(1);
-  }, []);
+  }, [fetchProducts]);
 
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages) {return;}
-    fetchProducts(page);
-  };
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (page < 1 || page > totalPages) return;
+      fetchProducts(page);
+    },
+    [fetchProducts, totalPages]
+  );
 
-  const renderPagination = () => {
-    if (searchQuery || minPrice || maxPrice) {return null;}
+  const renderItem = useCallback(
+    ({ item }: { item: Product }) => (
+      <ProductCard
+        title={item.title}
+        price={item.price}
+        images={item.images.map(img => ({ uri: `${IMAGE_BASE_URL}${img.url}` }))}
+        onPress={() =>
+          navigation.navigate('ProductDetails', { productId: item._id })
+        }
+      />
+    ),
+    [navigation]
+  );
+
+  const keyExtractor = useCallback((item: Product) => item._id, []);
+
+  const renderPagination = useCallback(() => {
+    if (searchQuery || minPrice || maxPrice) return null;
 
     const pageButtons = [];
     for (let i = 1; i <= totalPages; i++) {
@@ -150,7 +171,7 @@ export default function ProductScreen() {
             currentPage === i && styles.activePageButton,
           ]}>
           <Text style={styles.pageText}>{i}</Text>
-        </TouchableOpacity>,
+        </TouchableOpacity>
       );
     }
 
@@ -173,25 +194,14 @@ export default function ProductScreen() {
         </TouchableOpacity>
       </View>
     );
-  };
+  }, [currentPage, totalPages, searchQuery, minPrice, maxPrice, handlePageChange, styles]);
 
   return (
     <ListScreenWrapper>
       <FlatList
         data={products}
-        keyExtractor={item => item._id}
-        renderItem={({item}) => (
-          <ProductCard
-            title={item.title}
-            price={item.price}
-            images={item.images.map(img => ({
-              uri: `${IMAGE_BASE_URL}${img.url}`,
-            }))}
-            onPress={() =>
-              navigation.navigate('ProductDetails', {productId: item._id})
-            }
-          />
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
         ListHeaderComponent={
           <View style={styles.innerContainer}>
             <SearchBar
@@ -236,12 +246,7 @@ export default function ProductScreen() {
                 title="Price: High to Low"
                 onPress={() => {
                   setSortOrder('desc');
-                  fetchSearchedProducts(
-                    searchQuery,
-                    minPrice,
-                    maxPrice,
-                    'desc',
-                  );
+                  fetchSearchedProducts(searchQuery, minPrice, maxPrice, 'desc');
                 }}
               />
             </View>
@@ -284,7 +289,7 @@ export default function ProductScreen() {
         initialNumToRender={4}
         maxToRenderPerBatch={6}
         windowSize={5}
-        removeClippedSubviews={true}
+        removeClippedSubviews
       />
     </ListScreenWrapper>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,7 +20,7 @@ export type ProductCardProps = {
 
 const screenWidth = Dimensions.get('window').width;
 
-export default function ProductCard({ title, price, images, onPress }: ProductCardProps) {
+function ProductCardComponent({ title, price, images, onPress }: ProductCardProps) {
   const isDarkMode = useColorScheme() === 'dark';
   const styles = getStyles(isDarkMode);
   const scrollRef = useRef<ScrollView>(null);
@@ -28,7 +28,7 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
   const isFocused = useIsFocused();
 
   useEffect(() => {
-    if (!images.length || !isFocused) return;
+    if (!images.length || !isFocused) {return;}
     const interval = setInterval(() => {
       setActiveIndex(prev => {
         const nextIndex = (prev + 1) % images.length;
@@ -81,6 +81,17 @@ export default function ProductCard({ title, price, images, onPress }: ProductCa
     </TouchableOpacity>
   );
 }
+
+// ✅ Memoize the component to prevent unnecessary re-renders
+const ProductCard = memo(ProductCardComponent, (prev, next) => {
+  return (
+    prev.title === next.title &&
+    prev.price === next.price &&
+    JSON.stringify(prev.images) === JSON.stringify(next.images)
+  );
+});
+
+export default ProductCard;
 
 const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
