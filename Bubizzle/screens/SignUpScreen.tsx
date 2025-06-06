@@ -6,29 +6,24 @@ import {
   Text,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import {useForm} from 'react-hook-form';
-import {z} from 'zod';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {useNavigation} from '@react-navigation/native';
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigation } from '@react-navigation/native';
 import FormScreenWrapper from '../components/FormScreenWrapper';
-import {useTheme} from '../context/ThemeContext';
-
+import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/AppTextInput';
 import AppButton from '../components/AppButton';
-import api from '../services/api'; // Your configured Axios instance
-
-// -------------------- Schema --------------------
+import api from '../services/api';
 
 const SignUpSchema = z.object({
-  firstName: z.string().min(2, 'First name is required'),
-  lastName: z.string().min(2, 'Last name is required'),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  firstName: z.string().trim().nonempty('First name is required'),
+  lastName: z.string().trim().nonempty('Last name is required'),
+  email: z.string().trim().nonempty('Email is required').email('Invalid email'),
+  password: z.string().trim().nonempty('Password is required').min(6, 'Password must be at least 6 characters'),
 });
 
 type SignUpFormData = z.infer<typeof SignUpSchema>;
-
-// -------------------- Component --------------------
 
 export default function SignUpScreen() {
   const navigation = useNavigation<any>();
@@ -37,17 +32,24 @@ export default function SignUpScreen() {
   const styles = getStyles(isDarkMode);
 
   const {
-    setValue,
+    control,
     handleSubmit,
-    formState: {errors},
+    formState: { errors },
   } = useForm<SignUpFormData>({
     resolver: zodResolver(SignUpSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+    },
   });
+
+  console.log('Validation Errors:', errors);
 
   const onSubmit = async (data: SignUpFormData) => {
     try {
-      const response = await api.post('/auth/signup', data); // JSON payload
-
+      const response = await api.post('/auth/signup', data);
       if (response.data?.success) {
         Alert.alert('Success', 'User created. Please login and verify OTP.');
         navigation.navigate('Login');
@@ -65,69 +67,94 @@ export default function SignUpScreen() {
   };
 
   return (
-   <FormScreenWrapper>
-        <Text style={styles.title}>Sign Up</Text>
+    <FormScreenWrapper>
+      <Text style={styles.title}>Sign Up</Text>
 
-        <AppTextInput
-          placeholder="First Name"
-          onChangeText={text => setValue('firstName', text)}
-          error={errors.firstName?.message}
-        />
-        <AppTextInput
-          placeholder="Last Name"
-          onChangeText={text => setValue('lastName', text)}
-          error={errors.lastName?.message}
-        />
-        <AppTextInput
-          placeholder="Email"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          onChangeText={text => setValue('email', text)}
-          error={errors.email?.message}
-        />
-        <View style={styles.passwordContainer}>
+      <Controller
+        control={control}
+        name="firstName"
+        render={({ field: { onChange, onBlur, value } }) => (
           <AppTextInput
-            placeholder="Password"
-            secureTextEntry={!showPassword}
-            onChangeText={text => setValue('password', text)}
-            error={errors.password?.message}
-            style={styles.passwordInput}
+            placeholder="First Name"
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.firstName?.message}
           />
-          <Icon
-            name={showPassword ? 'eye' : 'eye-off'}
-            size={20}
-            color="#888"
-            onPress={() => setShowPassword(prev => !prev)}
-            style={styles.eyeIcon}
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="lastName"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <AppTextInput
+            placeholder="Last Name"
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.lastName?.message}
           />
-        </View>
+        )}
+      />
 
-        <AppButton title="Register" onPress={handleSubmit(onSubmit)} />
+      <Controller
+        control={control}
+        name="email"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <AppTextInput
+            placeholder="Email"
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            error={errors.email?.message}
+          />
+        )}
+      />
 
-        <Text style={styles.loginText}>
-          Already have an account?{' '}
-          <Text
-            style={styles.loginLink}
-            onPress={() => navigation.navigate('Verification')}>
-            Login
-          </Text>
+      <View style={styles.passwordContainer}>
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <AppTextInput
+              placeholder="Password"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              secureTextEntry={!showPassword}
+              error={errors.password?.message}
+              style={styles.passwordInput}
+            />
+          )}
+        />
+        <Icon
+          name={showPassword ? 'eye' : 'eye-off'}
+          size={20}
+          color="#888"
+          onPress={() => setShowPassword(prev => !prev)}
+          style={styles.eyeIcon}
+        />
+      </View>
+
+      <AppButton title="Register" onPress={handleSubmit(onSubmit)} />
+
+      <Text style={styles.loginText}>
+        Already have an account?{' '}
+        <Text
+          style={styles.loginLink}
+          onPress={() => navigation.navigate('Verification')}>
+          Login
         </Text>
-      </FormScreenWrapper>
+      </Text>
+    </FormScreenWrapper>
   );
 }
 
-// -------------------- Styles --------------------
-
 const getStyles = (isDarkMode: boolean) =>
   StyleSheet.create({
-    wrapper: {
-      flex: 1,
-    },
-    container: {
-      padding: 20,
-      justifyContent: 'center',
-      flexGrow: 1,
-    },
     title: {
       fontSize: 24,
       marginBottom: 20,
@@ -157,4 +184,3 @@ const getStyles = (isDarkMode: boolean) =>
       paddingRight: 40,
     },
   });
-
