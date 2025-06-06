@@ -10,7 +10,6 @@ import { ONESIGNAL_APP_ID } from '@env';
 
 
 function onForegroundDisplay(event: NotificationWillDisplayEvent) {
-  console.log('🔔 Foreground notification:', event);
   event.preventDefault();
 
   const notif = event.getNotification();
@@ -27,7 +26,6 @@ function onForegroundDisplay(event: NotificationWillDisplayEvent) {
 function onNotificationClick(event: NotificationClickEvent) {
   const data = event.notification.additionalData as { productId?: string };
   const productId = data?.productId;
-  console.log('📨 Notification clicked, productId:', productId);
 
   if (productId) {
     navigationRef.current?.navigate('ProductDetails', { productId });
@@ -39,9 +37,9 @@ export function initializeOneSignal() {
   OneSignal.initialize(ONESIGNAL_APP_ID);
   OneSignal.Notifications.requestPermission(false);
 
-  OneSignal.User.pushSubscription.getTokenAsync().then(token => {
-    console.log('🆔 OneSignal Push Token:', token);
-  });
+  // OneSignal.User.pushSubscription.getTokenAsync().then(token => {
+  //   console.log('🆔 OneSignal Push Token:', token);
+  // });
 
   OneSignal.Notifications.addEventListener('foregroundWillDisplay', onForegroundDisplay);
   OneSignal.Notifications.addEventListener('click', onNotificationClick);

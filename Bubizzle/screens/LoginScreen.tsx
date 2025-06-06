@@ -18,6 +18,7 @@ import FormScreenWrapper from '../components/FormScreenWrapper';
 import {saveTokens} from '../storage/tokenStorage';
 import crashlytics from '@react-native-firebase/crashlytics';
 
+//Trigger a test crash where the data is sent to the firebase console, fire base crashlytics dashboard.
 const triggerCrash = () => {
  crashlytics().crash();
 };
@@ -178,9 +179,9 @@ export default function LoginScreen() {
           </AppText>
         </TouchableOpacity>
       </View>
-      <View style={{marginBottom: 40}}>
+      {/* <View style={{marginBottom: 40}}>
         <AppButton title="🚨 Trigger Test Crash" onPress={triggerCrash} />
-      </View>
+      </View> */}
     </FormScreenWrapper>
   );
 }

@@ -40,15 +40,15 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
         {isLoggedIn ? (
           <>
             <Stack.Screen name="TabViews" component={TabNavigator} />
-            <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
+            <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             <Stack.Screen name="EditProduct" component={EditProductScreen} />
             <Stack.Screen name="AddProduct" component={AddProductScreen} />
-            <Stack.Screen name="LocationPicker" component={LocationPickerScreen} />
+            <Stack.Screen name="LocationPicker" component={LocationPickerScreen} options={{ animation: 'slide_from_bottom' }} />
           </>
         ) : (
           <>

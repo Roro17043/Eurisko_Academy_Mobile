@@ -45,7 +45,6 @@ export default function SignUpScreen() {
     },
   });
 
-  console.log('Validation Errors:', errors);
 
   const onSubmit = async (data: SignUpFormData) => {
     try {

@@ -47,7 +47,7 @@ export default function MyProductsScreen() {
       while (hasNext) {
         const res = await api.get('/products', {
           headers: { Authorization: `Bearer ${accessToken}` },
-          params: { page, limit: 100 },
+          params: { page, limit: 150 },
         });
 
         const data = Array.isArray(res.data.data) ? res.data.data : [];

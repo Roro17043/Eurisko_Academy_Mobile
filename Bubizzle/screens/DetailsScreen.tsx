@@ -63,7 +63,6 @@ export default function ProductDetailsScreen() {
       try {
         const res = await api.get(`/products/${productId}`);
         const data = res.data.data;
-        console.log('Received product ID from deep link:', productId);
         setProduct(data);
         if (data.location?.latitude && data.location?.longitude) {
           const name = await reverseGeocode(
@@ -85,7 +84,7 @@ export default function ProductDetailsScreen() {
     if (!loading && product) {
       Animated.timing(slideY, {
         toValue: 0,
-        duration: 800,
+        duration: 500,
         useNativeDriver: true,
       }).start();
     }
