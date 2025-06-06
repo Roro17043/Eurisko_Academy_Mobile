@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   FlatList,
@@ -14,6 +14,7 @@ import {
   Platform,
   PermissionsAndroid,
   Alert,
+  Animated,
 } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
@@ -28,7 +29,6 @@ import ListScreenWrapper from '../components/ListScreenWrapper';
 import { reverseGeocode } from '../services/geocoding';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../storage/RTKstore/slices/cartSlice';
-import Animated, { SlideInUp } from 'react-native-reanimated';
 import { RootState } from '../storage/RTKstore';
 import { IMAGE_BASE_URL } from '@env';
 
@@ -40,8 +40,7 @@ export default function ProductDetailsScreen() {
   const { width } = useWindowDimensions();
   const { isDarkMode } = useTheme();
   const dispatch = useDispatch();
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProductDetails'>;
-const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'ProductDetails'>>();
   const themeStyles = getStyles(isDarkMode);
 
   const [product, setProduct] = useState<any>(null);
@@ -49,6 +48,8 @@ const navigation = useNavigation<NavigationProp>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const slideY = useRef(new Animated.Value(-200)).current;
 
   const user = useSelector((state: RootState) => state.auth.user);
   const isOwner = user?.id === product?.user?._id;
@@ -71,6 +72,16 @@ const navigation = useNavigation<NavigationProp>();
     };
     fetch();
   }, []);
+
+  useEffect(() => {
+    if (!loading && product) {
+      Animated.timing(slideY, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading, product]);
 
   const handleImageSave = async (url: string) => {
     try {
@@ -102,7 +113,6 @@ const navigation = useNavigation<NavigationProp>();
 
   const handleEdit = () => {
     navigation.navigate('EditProduct', { productId: product._id, from: 'ProductDetails' });
-    // Pass the current location if available
   };
 
   const handleDelete = async () => {
@@ -124,7 +134,9 @@ const navigation = useNavigation<NavigationProp>();
     ]);
   };
 
-  if (loading) {return <ActivityIndicator style={themeStyles.loadingContainer} size="large" color={isDarkMode ? '#ffffff' : '#000000'}/>;}
+  if (loading) {
+    return <ActivityIndicator style={themeStyles.loadingContainer} size="large" color={isDarkMode ? '#ffffff' : '#000000'} />;
+  }
   if (error || !product) {
     return (
       <ListScreenWrapper>
@@ -136,7 +148,7 @@ const navigation = useNavigation<NavigationProp>();
   return (
     <ListScreenWrapper>
       <Animated.ScrollView
-        entering={SlideInUp.duration(600).delay(100)}
+        style={{ transform: [{ translateY: slideY }] }}
         contentContainerStyle={themeStyles.container}
         nestedScrollEnabled
       >
